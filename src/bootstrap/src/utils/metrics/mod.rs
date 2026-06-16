@@ -168,12 +168,7 @@ impl BuildMetrics {
         system.refresh_cpu_usage();
         system.refresh_memory();
 
-        let system_stats = JsonInvocationSystemStats {
-            cpu_threads_count: system.cpus().len(),
-            cpu_model: system.cpus()[0].brand().into(),
-
-            memory_total_bytes: system.total_memory(),
-        };
+        let system_stats = build_system_stats(&system);
         let steps = std::mem::take(&mut state.finished_steps);
 
         // Some of our CI builds consist of multiple independent CI invocations. Ensure all the
@@ -282,8 +277,24 @@ struct StepMetrics {
     test_suites: Vec<TestSuite>,
 }
 
+fn build_system_stats(system: &System) -> JsonInvocationSystemStats {
+    let cpu_model = if let Some(cpu) = system.cpus().first() {
+        cpu.brand().into()
+    } else {
+        "unknown".into()
+    };
+    JsonInvocationSystemStats {
+        cpu_threads_count: system.cpus().len(),
+        cpu_model,
+        memory_total_bytes: system.total_memory(),
+    }
+}
+
 #[derive(serde_derive::Deserialize)]
 struct OnlyFormatVersion {
     #[serde(default)] // For version 0 the field was not present.
     format_version: usize,
 }
+
+#[cfg(test)]
+mod tests;
