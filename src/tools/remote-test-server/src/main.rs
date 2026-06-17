@@ -253,7 +253,11 @@ fn handle_run(socket: TcpStream, work: &Path, tmp: &Path, lock: &Mutex<()>, conf
     let lock = lock.lock();
 
     // Next there's a list of dynamic libraries preceded by their filenames.
-    while t!(reader.fill_buf())[0] != 0 {
+    loop {
+        let buf = t!(reader.fill_buf());
+        if buf.is_empty() || buf[0] == 0 {
+            break;
+        }
         recv(&path, &mut reader);
     }
     assert_eq!(t!(reader.read(&mut [0])), 1);
@@ -355,7 +359,7 @@ fn recv<B: BufRead>(dir: &Path, io: &mut B) -> PathBuf {
     // just arbitrarily truncate the filename to 50 bytes. That should
     // hopefully allow us to still identify what's running while staying under
     // the filesystem limits.
-    let len = cmp::min(filename.len() - 1, 50);
+    let len = cmp::min(filename.len().saturating_sub(1), 50);
     let dst = dir.join(t!(str::from_utf8(&filename[..len])));
     let amt = read_u64(io);
     t!(io::copy(&mut io.take(amt), &mut t!(File::create(&dst))));
