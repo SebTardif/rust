@@ -454,7 +454,7 @@ impl RepoState {
         } else if cfg!(windows) {
             self.windows
         } else {
-            unimplemented!()
+            unimplemented!("toolstate is not supported on this platform")
         }
     }
 }
