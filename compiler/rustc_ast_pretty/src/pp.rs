@@ -477,8 +477,9 @@ impl Printer {
         //
         // But that is significantly slower. This code is sufficiently hot, and indents can get
         // sufficiently large, that the difference is significant on some workloads.
-        self.out.reserve(self.pending_indentation as usize);
-        self.out.extend(iter::repeat(' ').take(self.pending_indentation as usize));
+        let indent = usize::try_from(self.pending_indentation).unwrap_or(0);
+        self.out.reserve(indent);
+        self.out.extend(iter::repeat(' ').take(indent));
         self.pending_indentation = 0;
 
         self.out.push_str(string);
