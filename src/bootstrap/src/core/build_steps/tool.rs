@@ -1274,15 +1274,24 @@ impl Step for LibcxxVersionTool {
 
         let version_output = command(executable).run_capture_stdout(builder).stdout();
 
-        let version_str = version_output.split_once("version:").unwrap().1;
-        let version = version_str.trim().parse::<usize>().unwrap();
+        let version_str = version_output
+            .split_once("version:")
+            .unwrap_or_else(|| {
+                panic!(
+                    "libcxx-version output does not contain \"version:\": {version_output:?}"
+                )
+            })
+            .1;
+        let version = version_str.trim().parse::<usize>().unwrap_or_else(|e| {
+            panic!("libcxx-version version is not a valid number: {version_str:?}: {e}")
+        });
 
         if version_output.starts_with("libstdc++") {
             LibcxxVersion::Gnu(version)
         } else if version_output.starts_with("libc++") {
             LibcxxVersion::Llvm(version)
         } else {
-            panic!("Coudln't recognize the standard library version.");
+            panic!("Couldn't recognize the standard library version from: {version_output:?}");
         }
     }
 }
