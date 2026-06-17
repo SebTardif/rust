@@ -324,7 +324,7 @@ where
                 // This shouldn't happen in our current usage (iter is really only
                 // used long after queries are done running), but if we hit this in practice it's
                 // probably fine to just break early.
-                None => unreachable!(),
+                None => break,
                 Some(((), key)) => {
                     let key = K::new(key as usize);
                     // unwrap() is OK: present entries are always written only after we put the real
