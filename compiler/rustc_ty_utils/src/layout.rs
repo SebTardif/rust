@@ -309,12 +309,10 @@ fn layout_of_uncached<'tcx>(
                                 .iter()
                                 .map(|pat| match *pat {
                                     ty::PatternKind::Range { start, end } => Ok((
-                                        extract_const_value(cx, ty, start)
-                                            .unwrap()
+                                        extract_const_value(cx, ty, start)?
                                             .try_to_bits(tcx, cx.typing_env)
                                             .ok_or_else(|| error(cx, LayoutError::Unknown(ty)))?,
-                                        extract_const_value(cx, ty, end)
-                                            .unwrap()
+                                        extract_const_value(cx, ty, end)?
                                             .try_to_bits(tcx, cx.typing_env)
                                             .ok_or_else(|| error(cx, LayoutError::Unknown(ty)))?,
                                     )),
