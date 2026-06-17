@@ -872,7 +872,7 @@ pub(crate) fn print_anchor(did: DefId, text: Symbol, cx: &Context<'_>) -> impl D
                 text = EscapeBodyText(text.as_str()),
             )
         } else {
-            f.write_str(text.as_str())
+            EscapeBodyText(text.as_str()).fmt(f)
         }
     })
 }
