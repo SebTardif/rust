@@ -396,7 +396,13 @@ impl ExpressionResolver {
             CovTerm::Zero => output.push_str("Zero"),
             CovTerm::Counter(id) => write!(output, "c{id}").unwrap(),
             CovTerm::Expression(id, op) => {
-                let (lhs, rhs) = self.operands[id as usize];
+                let (lhs, rhs) = match self.operands.get(id as usize) {
+                    Some(&pair) => pair,
+                    None => {
+                        write!(output, "?expr({id})").unwrap();
+                        return;
+                    }
+                };
                 let op = match op {
                     Op::Sub => "-",
                     Op::Add => "+",
