@@ -53,7 +53,7 @@ pub(crate) fn expand_column(
     let topmost = cx.expansion_cause().unwrap_or(sp);
     let loc = cx.source_map().lookup_char_pos(topmost.lo());
 
-    ExpandResult::Ready(MacEager::expr(cx.expr_u32(topmost, loc.col.to_usize() as u32 + 1)))
+    ExpandResult::Ready(MacEager::expr(cx.expr_u32(topmost, u32::try_from(loc.col.to_usize() + 1).unwrap())))
 }
 
 /// Expand `file!()` to the current filename.
