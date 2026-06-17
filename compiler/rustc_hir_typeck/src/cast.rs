@@ -388,7 +388,7 @@ impl<'a, 'tcx> CastCheck<'tcx> {
             }
             CastError::CastToBool => {
                 let expr_ty = fcx.resolve_vars_if_possible(self.expr_ty);
-                let help = if self.expr_ty.is_numeric() {
+                let help = if expr_ty.is_numeric() {
                     diagnostics::CannotCastToBoolHelp::Numeric(
                         self.expr_span.shrink_to_hi().with_hi(self.span.hi()),
                     )
