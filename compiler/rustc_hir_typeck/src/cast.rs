@@ -919,7 +919,7 @@ impl<'a, 'tcx> CastCheck<'tcx> {
 
         // We can't cast to wide pointer if source pointer kind is unknown
         let Some(src_kind) = src_kind else {
-            return Err(CastError::UnknownCastPtrKind);
+            return Err(CastError::UnknownExprPtrKind);
         };
 
         match (src_kind, dst_kind) {
