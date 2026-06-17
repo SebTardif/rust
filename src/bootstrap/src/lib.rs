@@ -722,7 +722,7 @@ impl Build {
             // Look for `submodule.$name.path = $path`
             // Sample output: `submodule.src/rust-installer.path src/tools/rust-installer`
             for line in output.lines() {
-                let submodule = line.split_once(' ').unwrap().1;
+                let Some((_, submodule)) = line.split_once(' ') else { continue };
                 let config = self.config.clone();
                 s.spawn(move || {
                     Self::update_existing_submodule(&config, submodule);
