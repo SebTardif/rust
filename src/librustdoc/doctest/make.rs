@@ -506,7 +506,7 @@ fn parse_source(
         let extra_len = DOCTEST_CODE_WRAPPER.len();
         // We need to shift by the length of `DOCTEST_CODE_WRAPPER` because we
         // added it at the beginning of the source we provided to the parser.
-        let mut hi = span.hi().0 as usize - extra_len;
+        let Some(mut hi) = (span.hi().0 as usize).checked_sub(extra_len) else { return };
         if hi > source.len() {
             hi = source.len();
         }
