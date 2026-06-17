@@ -252,7 +252,8 @@ impl<'a> Renderer<'a> {
                 let total = total.to_string();
                 let executed = format!("{:>width$}", self.executed_tests, width = total.len());
                 let pretty_percent = format!("{:.0}%", percent * 100.0);
-                let passed_tests = self.executed_tests - (self.failures.len() + self.ignored_tests);
+                let passed_tests =
+                    self.executed_tests.saturating_sub(self.failures.len() + self.ignored_tests);
                 println!(
                     "{:<4} -- {executed}/{total}, {:>total_indent$} passed, {} failed, {} ignored",
                     pretty_percent,
