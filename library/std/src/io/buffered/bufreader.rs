@@ -137,7 +137,12 @@ impl<R: Read + ?Sized> BufReader<R> {
     /// ```
     #[unstable(feature = "bufreader_peek", issue = "128405")]
     pub fn peek(&mut self, n: usize) -> io::Result<&[u8]> {
-        assert!(n <= self.capacity());
+        if n > self.capacity() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "peek length exceeds buffer capacity",
+            ));
+        }
         while n > self.buf.buffer().len() {
             if self.buf.pos() > 0 {
                 self.buf.backshift();
