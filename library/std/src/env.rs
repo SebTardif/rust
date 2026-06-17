@@ -117,8 +117,10 @@ impl !Sync for VarsOs {}
 /// # Panics
 ///
 /// While iterating, the returned iterator will panic if any key or value in the
-/// environment is not valid unicode. If this is not desired, consider using
-/// [`env::vars_os()`].
+/// environment is not valid unicode. On Unix systems, environment variables
+/// can contain arbitrary bytes, so this can happen in practice. If this is
+/// not desired, use [`env::vars_os()`] which returns `OsString` values
+/// that can represent any platform-native string.
 ///
 /// # Examples
 ///
