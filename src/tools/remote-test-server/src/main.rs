@@ -161,7 +161,7 @@ fn main() {
                 thread::spawn(f);
             }
         } else {
-            panic!("unknown command {:?}", buf);
+            eprintln!("unknown command {:?}, ignoring connection", buf);
         }
     }
 }
