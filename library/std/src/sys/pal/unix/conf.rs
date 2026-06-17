@@ -3,7 +3,9 @@ mod tests;
 
 #[cfg(not(target_os = "espidf"))]
 pub fn page_size() -> usize {
-    unsafe { libc::sysconf(libc::_SC_PAGESIZE) as usize }
+    let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+    assert!(page_size > 0, "sysconf(_SC_PAGESIZE) failed or returned an invalid value");
+    page_size as usize
 }
 
 /// Returns the value for [`confstr(key, ...)`][posix_confstr]. Currently only
