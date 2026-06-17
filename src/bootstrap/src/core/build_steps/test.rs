@@ -3944,7 +3944,7 @@ impl Step for RustInstaller {
         let mut cmd = command(builder.src.join("src/tools/rust-installer/test.sh"));
         let tmpdir = testdir(builder, build_compiler.host).join("rust-installer");
         let _ = std::fs::remove_dir_all(&tmpdir);
-        let _ = std::fs::create_dir_all(&tmpdir);
+        t!(std::fs::create_dir_all(&tmpdir));
         cmd.current_dir(&tmpdir);
         cmd.env("CARGO_TARGET_DIR", tmpdir.join("cargo-target"));
         cmd.env("CARGO", &builder.initial_cargo);
