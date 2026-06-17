@@ -91,8 +91,7 @@ impl Tarballer {
                 .into_inner()
                 .context("failed to finish writing .tar stream")?
                 .into_inner()
-                .ok()
-                .unwrap()
+                .map_err(|e| anyhow::anyhow!("failed to flush tar write buffer: {}", e.error()))?
                 .finish()?;
 
             Ok(())
