@@ -63,7 +63,8 @@ pub fn run_in_tmpdir<F: FnOnce()>(callback: F) {
     fs::copy_dir_all(".", &tmpdir);
 
     std::env::set_current_dir(&tmpdir).unwrap();
-    callback();
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(callback));
     std::env::set_current_dir(original_dir).unwrap();
     fs::remove_dir_all(tmpdir);
+    result.unwrap();
 }
