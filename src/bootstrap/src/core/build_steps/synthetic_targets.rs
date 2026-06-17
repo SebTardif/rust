@@ -66,8 +66,9 @@ fn create_synthetic_target(
     cmd.env("RUSTC_BOOTSTRAP", "1");
 
     let output = cmd.run_capture(builder).stdout();
-    let mut spec: serde_json::Value = serde_json::from_slice(output.as_bytes()).unwrap();
-    let spec_map = spec.as_object_mut().unwrap();
+    let mut spec: serde_json::Value = serde_json::from_slice(output.as_bytes())
+        .expect("failed to parse rustc target-spec-json output as JSON");
+    let spec_map = spec.as_object_mut().expect("target-spec-json output is not a JSON object");
 
     // The `is-builtin` attribute of a spec needs to be removed, otherwise rustc will complain.
     spec_map.remove("is-builtin");
