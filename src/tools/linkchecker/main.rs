@@ -580,7 +580,7 @@ fn is_exception(file: &Path, link: &str) -> bool {
 /// destination path given in the redirect.
 fn maybe_redirect(source: &str) -> Option<String> {
     const REDIRECT_RUSTDOC: (usize, &str) = (7, "<p>Redirecting to <a href=");
-    const REDIRECT_MDBOOK: (usize, &str) = (8 - 7, "<p>Redirecting to... <a href=");
+    const REDIRECT_MDBOOK: (usize, &str) = (0, "<p>Redirecting to... <a href=");
 
     let mut lines = source.lines();
 
