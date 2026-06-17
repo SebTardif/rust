@@ -400,7 +400,9 @@ fn get_cc_search_dirs(
     let mut lib_path = Vec::new();
 
     for line in gcc_out.lines() {
-        let idx = line.find(':').unwrap();
+        let Some(idx) = line.find(':') else {
+            continue;
+        };
         let key = &line[..idx];
         let trim_chars: &[_] = &[' ', '='];
         let value = env::split_paths(line[(idx + 1)..].trim_start_matches(trim_chars));
