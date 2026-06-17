@@ -56,7 +56,7 @@ pub(crate) fn document_type_layout(cx: &Context<'_>, ty_def_id: DefId) -> impl f
                     let name = adt.variant(variant_idx).name;
                     let is_unsized = variant_layout.backend_repr.is_unsized();
                     let is_uninhabited = variant_layout.is_uninhabited();
-                    let size = variant_layout.size.bytes() - tag_size;
+                    let size = variant_layout.size.bytes().saturating_sub(tag_size);
                     let type_layout_size = TypeLayoutSize { is_unsized, is_uninhabited, size };
                     (name, type_layout_size)
                 })
