@@ -106,7 +106,7 @@ fn clean(build: &Build, all: bool, stage: Option<u32>) {
         return;
     }
 
-    rm_rf("tmp".as_ref());
+    rm_rf(&build.out.join("tmp"));
 
     // Clean the entire build directory
     if all {
