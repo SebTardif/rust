@@ -513,8 +513,14 @@ undesirable, simply delete the `pre-push` file from .git/hooks."
         return Ok(());
     }
     if !hooks_dir.exists() {
-        // We need to (try to) create the hooks directory first.
-        let _ = fs::create_dir(hooks_dir);
+        // We need to create the hooks directory first.
+        if let Err(e) = fs::create_dir(hooks_dir) {
+            eprintln!(
+                "ERROR: could not create hooks directory {}: {e}",
+                hooks_dir.display()
+            );
+            return Err(e);
+        }
     }
     let src = config.src.join("src").join("etc").join("pre-push.sh");
     match fs::hard_link(src, &dst) {
