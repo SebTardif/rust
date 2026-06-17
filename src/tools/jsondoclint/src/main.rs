@@ -54,7 +54,11 @@ fn main() -> Result<()> {
 
     let contents = fs::read_to_string(&path)?;
     let krate: Crate = serde_json::from_str(&contents)?;
-    assert_eq!(krate.format_version, FORMAT_VERSION);
+    anyhow::ensure!(
+        krate.format_version == FORMAT_VERSION,
+        "JSON doc format version mismatch: found {}, expected {FORMAT_VERSION}",
+        krate.format_version,
+    );
 
     let krate_json: Value = serde_json::from_str(&contents)?;
 
