@@ -604,8 +604,19 @@ impl<A: Allocator> Read for VecDeque<u8, A> {
 
     #[inline]
     fn read_to_string(&mut self, buf: &mut String) -> io::Result<usize> {
-        // SAFETY: We only append to the buffer
-        unsafe { io::append_to_string(buf, |buf| self.read_to_end(buf)) }
+        // Validate UTF-8 before draining to avoid data loss on error.
+        // Unlike the default `read_to_string`, we can inspect the bytes
+        // without consuming them first.
+        let (front, back) = self.as_slices();
+        let mut tmp = Vec::new();
+        tmp.try_reserve(front.len() + back.len())?;
+        tmp.extend_from_slice(front);
+        tmp.extend_from_slice(back);
+        let s = core::str::from_utf8(&tmp).map_err(|_| io::Error::INVALID_UTF8)?;
+        buf.push_str(s);
+        let len = self.len();
+        self.clear();
+        Ok(len)
     }
 }
 
