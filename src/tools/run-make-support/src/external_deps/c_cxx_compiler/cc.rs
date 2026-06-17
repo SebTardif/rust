@@ -41,7 +41,7 @@ impl Cc {
         let mut cmd = Command::new(compiler);
 
         let default_cflags = env_var("CC_DEFAULT_FLAGS");
-        for flag in default_cflags.split(char::is_whitespace) {
+        for flag in default_cflags.split_whitespace() {
             cmd.arg(flag);
         }
 
@@ -57,7 +57,7 @@ impl Cc {
         let mut cmd = Command::new(compiler);
 
         let default_cflags = env_var("CXX_DEFAULT_FLAGS");
-        for flag in default_cflags.split(char::is_whitespace) {
+        for flag in default_cflags.split_whitespace() {
             cmd.arg(flag);
         }
 
