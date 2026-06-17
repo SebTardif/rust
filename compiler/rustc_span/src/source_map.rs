@@ -811,14 +811,11 @@ impl SourceMap {
                 }
             }
             // test the left side to match '<' after skipping white space
-            i = start_index;
             let start_src = &src[0..start_index];
-            while let Some(cc) = start_src.chars().nth(i) {
+            let mut left_iter = start_src.chars().rev();
+            while let Some(cc) = left_iter.next() {
                 if cc == ' ' {
-                    if i == 0 {
-                        return Ok(false);
-                    }
-                    i = i - 1;
+                    // continue scanning backwards
                 } else if cc == '<' {
                     // found < in the left
                     if !found_right_angle {
