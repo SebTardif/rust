@@ -38,7 +38,7 @@ pub(crate) fn expand_line(
     let topmost = cx.expansion_cause().unwrap_or(sp);
     let loc = cx.source_map().lookup_char_pos(topmost.lo());
 
-    ExpandResult::Ready(MacEager::expr(cx.expr_u32(topmost, loc.line as u32)))
+    ExpandResult::Ready(MacEager::expr(cx.expr_u32(topmost, u32::try_from(loc.line).unwrap())))
 }
 
 /// Expand `column!()` to the current column number.
