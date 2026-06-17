@@ -87,15 +87,22 @@ impl<T: Internable + Hash> Hash for Interned<T> {
 impl<T: Internable + Deref> Deref for Interned<T> {
     type Target = T::Target;
     fn deref(&self) -> &Self::Target {
+        // SAFETY: Items in the intern cache are never removed or moved once inserted.
+        // `TyIntern` uses a `Vec<Box<T>>` whose `Box` pointers are stable across
+        // `Vec` reallocations, so the returned reference remains valid after the
+        // `MutexGuard` is dropped.
         let l = T::intern_cache().lock().unwrap();
-        unsafe { mem::transmute::<&Self::Target, &Self::Target>(l.get(*self)) }
+        let ptr: *const Self::Target = l.get(*self);
+        unsafe { &*ptr }
     }
 }
 
 impl<T: Internable + AsRef<U>, U: ?Sized> AsRef<U> for Interned<T> {
     fn as_ref(&self) -> &U {
+        // SAFETY: Same as `Deref::deref` above; `Box` provides a stable address.
         let l = T::intern_cache().lock().unwrap();
-        unsafe { mem::transmute::<&U, &U>(l.get(*self).as_ref()) }
+        let ptr: *const U = l.get(*self).as_ref();
+        unsafe { &*ptr }
     }
 }
 
@@ -117,8 +124,12 @@ impl<T: Internable + Ord> Ord for Interned<T> {
 ///
 /// `TyIntern<T>` maintains a mapping between values and their interned representations,
 /// ensuring that duplicate values are not stored multiple times.
+///
+/// Items are stored in `Box<T>` so that their addresses remain stable even when the
+/// backing `Vec` reallocates. This allows `Interned<T>::deref` and `as_ref` to safely
+/// return references that outlive the `MutexGuard` protecting this struct.
 struct TyIntern<T: Clone + Eq> {
-    items: Vec<T>,
+    items: Vec<Box<T>>,
     set: HashMap<T, Interned<T>>,
 }
 
@@ -143,7 +154,7 @@ impl<T: Hash + Clone + Eq> TyIntern<T> {
         let item = item.to_owned();
         let interned = Interned(self.items.len(), PhantomData::<*const T>);
         self.set.insert(item.clone(), interned);
-        self.items.push(item);
+        self.items.push(Box::new(item));
         interned
     }
 
@@ -156,7 +167,7 @@ impl<T: Hash + Clone + Eq> TyIntern<T> {
         }
         let interned = Interned(self.items.len(), PhantomData::<*const T>);
         self.set.insert(item.clone(), interned);
-        self.items.push(item);
+        self.items.push(Box::new(item));
         interned
     }
 
