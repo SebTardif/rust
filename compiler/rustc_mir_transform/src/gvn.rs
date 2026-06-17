@@ -896,7 +896,7 @@ impl<'body, 'a, 'tcx> VnState<'body, 'a, 'tcx> {
                     }
                     Value::Aggregate(_, operands) => {
                         let offset = if from_end {
-                            operands.len() - offset as usize
+                            operands.len().checked_sub(offset as usize)?
                         } else {
                             offset as usize
                         };
