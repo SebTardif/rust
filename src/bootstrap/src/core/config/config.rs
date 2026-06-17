@@ -2212,7 +2212,7 @@ pub fn check_stage0_version(
             && (source_version.minor == stage0_version.minor
                 || source_version.minor == stage0_version.minor + 1)))
     {
-        let prev_version = format!("{}.{}.x", source_version.major, source_version.minor - 1);
+        let prev_version = format!("{}.{}.x", source_version.major, source_version.minor.saturating_sub(1));
         fail(&format!(
             "Unexpected {component_name} version: {stage0_version}, we should use {prev_version}/{source_version} to build source with {source_version}"
         ));
