@@ -85,6 +85,9 @@ impl DecimalSeq {
         //
         // Trim is only called in `right_shift` and `left_shift`.
         debug_assert!(self.num_digits <= Self::MAX_DIGITS);
+        // Clamp to MAX_DIGITS to prevent out-of-bounds access if the
+        // debug_assert invariant is ever violated by a new caller.
+        self.num_digits = self.num_digits.min(Self::MAX_DIGITS);
         while self.num_digits != 0 && self.digits[self.num_digits - 1] == 0 {
             self.num_digits -= 1;
         }
