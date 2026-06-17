@@ -183,7 +183,7 @@ fn default_compiler(
             let mut cmd = BootstrapCommand::from(c.to_command());
             let output = cmd.arg("--version").run_capture_stdout(build).stdout();
             let i = output.find(" 4.")?;
-            match output[i + 3..].chars().next().unwrap() {
+            match output[i + 3..].chars().next()? {
                 '0'..='6' => {}
                 _ => return None,
             }
