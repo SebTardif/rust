@@ -1502,14 +1502,16 @@ impl<'body, 'a, 'tcx> VnState<'body, 'a, 'tcx> {
                 BinOp::Mul
                 | BinOp::MulWithOverflow
                 | BinOp::MulUnchecked
-                | BinOp::Div
-                | BinOp::Rem
                 | BinOp::BitAnd
                 | BinOp::Shl
                 | BinOp::Shr,
                 Left(0),
                 _,
             ) => self.insert_scalar(lhs_ty, Scalar::from_uint(0u128, layout.size)),
+            // 0 / x and 0 % x are only 0 when x is known to be non-zero.
+            (BinOp::Div | BinOp::Rem, Left(0), Left(b)) if b != 0 => {
+                self.insert_scalar(lhs_ty, Scalar::from_uint(0u128, layout.size))
+            }
             // Attempt to simplify `x | ALL_ONES` to `ALL_ONES`.
             (BinOp::BitOr, _, Left(ones)) | (BinOp::BitOr, Left(ones), _)
                 if ones == layout.size.truncate(u128::MAX)
