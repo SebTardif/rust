@@ -210,8 +210,8 @@ where
         // acos: [0, π]
         "acos" => val.clamp(zero, pi),
 
-        // asin: [-π, +π]
-        "asin" => val.clamp(pi.neg(), pi),
+        // asin: [-π/2, +π/2]
+        "asin" => val.clamp(pi_over_2.neg(), pi_over_2),
 
         // atan: (-π/2, +π/2)
         "atan" => val.clamp(pi_over_2.neg(), pi_over_2),
