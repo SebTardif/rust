@@ -673,8 +673,7 @@ fn fix_bin_or_dylib(out: &Path, fname: &Path, exec_ctx: &ExecutionContext) {
     println!("attempting to patch {}", fname.display());
 
     // Only build `.nix-deps` once.
-    static NIX_DEPS_DIR: OnceLock<PathBuf> = OnceLock::new();
-    let mut nix_build_succeeded = true;
+    static NIX_DEPS_DIR: OnceLock<Option<PathBuf>> = OnceLock::new();
     let nix_deps_dir = NIX_DEPS_DIR.get_or_init(|| {
         // Run `nix-build` to "build" each dependency (which will likely reuse
         // the existing `/nix/store` copy, or at most download a pre-built copy).
@@ -704,16 +703,16 @@ fn fix_bin_or_dylib(out: &Path, fname: &Path, exec_ctx: &ExecutionContext) {
             ];
         }
         ";
-        nix_build_succeeded = command("nix-build")
+        let succeeded = command("nix-build")
             .allow_failure()
             .args([Path::new("-E"), Path::new(NIX_EXPR), Path::new("-o"), &nix_deps_dir])
             .run_capture_stdout(exec_ctx)
             .is_success();
-        nix_deps_dir
+        if succeeded { Some(nix_deps_dir) } else { None }
     });
-    if !nix_build_succeeded {
+    let Some(nix_deps_dir) = nix_deps_dir else {
         return;
-    }
+    };
 
     let mut patchelf = command(nix_deps_dir.join("bin/patchelf"));
     patchelf.args(&[
