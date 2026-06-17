@@ -105,24 +105,24 @@ pub(crate) fn extract_gdb_version(full_version_line: &str) -> Option<u32> {
     // This particular form is documented in the GNU coding standards:
     // https://www.gnu.org/prep/standards/html_node/_002d_002dversion.html#g_t_002d_002dversion
 
-    let unbracketed_part = full_version_line.split('[').next().unwrap();
+    let unbracketed_part = full_version_line.split('[').next()?;
     let mut splits = unbracketed_part.trim_end().rsplit(' ');
-    let version_string = splits.next().unwrap();
+    let version_string = splits.next()?;
 
     let mut splits = version_string.split('.');
-    let major = splits.next().unwrap();
-    let minor = splits.next().unwrap();
+    let major = splits.next()?;
+    let minor = splits.next()?;
     let patch = splits.next();
 
-    let major: u32 = major.parse().unwrap();
+    let major: u32 = major.parse().ok()?;
     let (minor, patch): (u32, u32) = match minor.find(not_a_digit) {
         None => {
-            let minor = minor.parse().unwrap();
+            let minor = minor.parse().ok()?;
             let patch: u32 = match patch {
                 Some(patch) => match patch.find(not_a_digit) {
-                    None => patch.parse().unwrap(),
+                    None => patch.parse().ok()?,
                     Some(idx) if idx > 3 => 0,
-                    Some(idx) => patch[..idx].parse().unwrap(),
+                    Some(idx) => patch[..idx].parse().ok()?,
                 },
                 None => 0,
             };
@@ -130,7 +130,7 @@ pub(crate) fn extract_gdb_version(full_version_line: &str) -> Option<u32> {
         }
         // There is no patch version after minor-date (e.g. "4-2012").
         Some(idx) => {
-            let minor = minor[..idx].parse().unwrap();
+            let minor = minor[..idx].parse().ok()?;
             (minor, 0)
         }
     };
