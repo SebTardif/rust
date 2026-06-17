@@ -1754,7 +1754,7 @@ impl NumScalableVectors {
     // but not for a tuple which would have a field count.
     pub fn from_field_count(count: usize) -> Option<Self> {
         match count {
-            2..8 => Some(NumScalableVectors(count as u8)),
+            2..=8 => Some(NumScalableVectors(count as u8)),
             _ => None,
         }
     }
