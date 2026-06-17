@@ -39,8 +39,9 @@ pub(crate) fn clif_int_or_float_cast(
 
     // FIXME(bytecodealliance/wasmtime#8312): Remove in favour of native
     // Cranelift operations once Cranelift backends have lowerings for them.
-    if matches!(from_ty, types::F16 | types::F128)
-        || matches!(to_ty, types::F16 | types::F128) && from_ty != to_ty
+    if (matches!(from_ty, types::F16 | types::F128)
+        || matches!(to_ty, types::F16 | types::F128))
+        && from_ty != to_ty
     {
         return codegen_f16_f128::codegen_cast(fx, from, from_signed, to_ty, to_signed);
     }
