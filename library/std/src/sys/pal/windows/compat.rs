@@ -225,7 +225,12 @@ macro_rules! compat_fn_optional {
             }
             #[inline]
             pub unsafe extern "system" fn $symbol($($argname: $argtype),*) $(-> $rettype)? {
-                unsafe { $symbol::option().unwrap()($($argname),*) }
+                unsafe {
+                    $symbol::option().expect(concat!(
+                        stringify!($symbol),
+                        " not loaded; required DLL function is unavailable"
+                    ))($($argname),*)
+                }
             }
         )+
     )
