@@ -48,8 +48,14 @@ fn main() -> Result<()> {
 
     // We convert `-` into `_` for the file name to be sure the JSON path will always be correct.
     let path = Path::new(&path);
-    let filename = path.file_name().unwrap().to_str().unwrap().replace('-', "_");
-    let parent = path.parent().unwrap();
+    let filename = path
+        .file_name()
+        .and_then(|f| f.to_str())
+        .ok_or_else(|| anyhow::anyhow!("invalid path: no valid UTF-8 file name in {path:?}"))?
+        .replace('-', "_");
+    let parent = path
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("invalid path: no parent directory for {path:?}"))?;
     let path = parent.join(&filename);
 
     let contents = fs::read_to_string(&path)?;
