@@ -504,7 +504,8 @@ pub fn prepare_compiler_for_check(
             //
             // FIXME: remove this and either fix cross-compilation check on stage 2 (which has a
             // myriad of other problems) or disable cross-checking on stage 1.
-            let stage = if host == target { builder.top_stage - 1 } else { builder.top_stage };
+            let stage =
+                if host == target { builder.top_stage.saturating_sub(1) } else { builder.top_stage };
             let build_compiler = builder.compiler(stage, host);
 
             // To check rustc, we need to check std that it will link to
