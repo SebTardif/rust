@@ -636,7 +636,7 @@ impl<'a, 'tcx> CastCheck<'tcx> {
                 let (span, sub) = if unknown_cast_to {
                     (self.cast_span, diagnostics::CastUnknownPointerSub::To(self.cast_span))
                 } else {
-                    (self.cast_span, diagnostics::CastUnknownPointerSub::From(self.span))
+                    (self.expr_span, diagnostics::CastUnknownPointerSub::From(self.span))
                 };
                 fcx.dcx().emit_err(diagnostics::CastUnknownPointer {
                     span,
