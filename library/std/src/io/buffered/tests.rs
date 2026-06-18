@@ -1203,6 +1203,28 @@ fn bufreader_full_initialize() {
     assert!(reader.initialized());
 }
 
+/// Regression test: seek_relative(i64::MIN) must not panic.
+/// Before the fix, the code cast `-offset` as `u64`, which overflows on
+/// i64::MIN in debug mode (negating i64::MIN is i64::MIN due to two's complement).
+/// The fix uses `offset.unsigned_abs()` instead.
+/// See https://github.com/SebTardif/rust/issues/421
+#[test]
+fn test_seek_relative_i64_min_no_panic() {
+    let inner: &[u8] = &[0, 1, 2, 3, 4, 5, 6, 7];
+    let mut reader = BufReader::with_capacity(4, io::Cursor::new(inner));
+
+    // Fill the buffer so pos > 0
+    let _ = reader.fill_buf();
+    reader.consume(2);
+
+    // seek_relative(i64::MIN) cannot be satisfied in-buffer, so it falls
+    // through to the underlying Seek. The underlying cursor is at position 4
+    // (capacity-sized read), so Current(i64::MIN) will fail with an error,
+    // but the important thing is it does NOT panic.
+    let result = reader.seek_relative(i64::MIN);
+    assert!(result.is_err(), "seek_relative(i64::MIN) should return Err, not panic");
+}
+
 /// This is a regression test for https://github.com/rust-lang/rust/issues/127584.
 #[test]
 fn bufwriter_aliasing() {
