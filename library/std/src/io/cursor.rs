@@ -133,7 +133,7 @@ where
         Ok(Cursor::split(self).1)
     }
     fn consume(&mut self, amt: usize) {
-        self.set_position(self.position() + amt as u64);
+        self.set_position(self.position().saturating_add(amt as u64));
     }
 }
 
