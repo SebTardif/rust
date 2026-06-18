@@ -225,7 +225,7 @@ impl ExitStatus {
     }
 
     pub fn signal(&self) -> Option<i32> {
-        if !self.exited() { Some(libc::WTERMSIG(self.0)) } else { None }
+        if libc::WIFSIGNALED(self.0) { Some(libc::WTERMSIG(self.0)) } else { None }
     }
 
     pub fn core_dumped(&self) -> bool {
