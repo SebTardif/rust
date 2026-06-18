@@ -535,7 +535,7 @@ impl Socket {
     pub fn set_exclbind(&self, excl: bool) -> io::Result<()> {
         // not yet on libc crate
         const SO_EXCLBIND: i32 = 0x1015;
-        unsafe { setsockopt(self, libc::SOL_SOCKET, SO_EXCLBIND, excl) }
+        unsafe { setsockopt(self, libc::SOL_SOCKET, SO_EXCLBIND, excl as c_int) }
     }
 
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
