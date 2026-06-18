@@ -360,9 +360,11 @@ impl File {
         let off = match pos {
             SeekFrom::Start(p) => p,
             SeekFrom::End(p) => {
-                // Seeking to position 0xFFFFFFFFFFFFFFFF causes the current position to be set to the end of the file.
                 if p == 0 {
-                    0xFFFFFFFFFFFFFFFF
+                    // Set position to end of file via the UEFI sentinel, then
+                    // query the resulting position so callers get the real offset.
+                    self.0.set_position(0xFFFFFFFFFFFFFFFF)?;
+                    return self.tell();
                 } else {
                     self.file_attr()?.size().checked_add_signed(p).ok_or(NEG_OFF_ERR)?
                 }
