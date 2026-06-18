@@ -118,9 +118,9 @@ pub unsafe trait UserSafe {
     unsafe fn check_ptr(ptr: *const Self) {
         let is_aligned = |p: *const u8| -> bool { p.is_aligned_to(Self::align_of()) };
 
+        assert!(!ptr.is_null());
         assert!(is_aligned(ptr as *const u8));
         assert!(is_user_range(ptr as _, size_of_val(unsafe { &*ptr })));
-        assert!(!ptr.is_null());
     }
 }
 
