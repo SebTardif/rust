@@ -3630,7 +3630,7 @@ impl<'a, K: Ord, V, A: Allocator + Clone> CursorMut<'a, K, V, A> {
     /// Inserts a new key-value pair into the map in the gap that the
     /// cursor is currently pointing to.
     ///
-    /// After the insertion the cursor will be pointing at the gap after the
+    /// After the insertion the cursor will be pointing at the gap before the
     /// newly inserted element.
     ///
     /// # Safety
