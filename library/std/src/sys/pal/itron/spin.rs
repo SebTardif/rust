@@ -19,26 +19,32 @@ impl<T> SpinMutex<T> {
     /// Acquire a lock.
     #[inline]
     pub fn with_locked<R>(&self, f: impl FnOnce(&mut T) -> R) -> R {
-        struct SpinMutexGuard<'a>(&'a Atomic<bool>);
+        struct SpinMutexGuard<'a>(&'a Atomic<bool>, bool);
 
         impl Drop for SpinMutexGuard<'_> {
             #[inline]
             fn drop(&mut self) {
                 self.0.store(false, Ordering::Release);
-                unsafe { abi::ena_dsp() };
+                if self.1 {
+                    unsafe { abi::ena_dsp() };
+                }
             }
         }
 
-        let _guard;
-        if unsafe { abi::sns_dsp() } == 0 {
+        let dispatch_was_enabled = unsafe { abi::sns_dsp() } == 0;
+
+        if dispatch_was_enabled {
             let er = unsafe { abi::dis_dsp() };
             debug_assert!(er >= 0);
-
-            // Wait until the current processor acquires a lock.
-            while self.locked.swap(true, Ordering::Acquire) {}
-
-            _guard = SpinMutexGuard(&self.locked);
         }
+
+        // Always acquire the spinlock for inter-core synchronization,
+        // even when dispatch is already disabled. The dispatch disable
+        // only provides intra-core protection; the spinlock is needed
+        // for inter-core protection on SMP systems.
+        while self.locked.swap(true, Ordering::Acquire) {}
+
+        let _guard = SpinMutexGuard(&self.locked, dispatch_was_enabled);
 
         f(unsafe { &mut *self.data.get() })
     }
