@@ -3795,6 +3795,13 @@ impl Hash for Path {
         };
         let bytes = &bytes[prefix_len..];
 
+        // Hash whether the path has a root component to prevent collisions
+        // between absolute and relative paths (e.g., "/foo" vs "foo").
+        let has_root = bytes.first().is_some_and(|&b| {
+            if verbatim { is_verbatim_sep(b) } else { is_sep_byte(b) }
+        });
+        h.write_u8(has_root as u8);
+
         let mut component_start = 0;
         // track some extra state to avoid prefix collisions.
         // ["foo", "bar"] and ["foobar"], will have the same payload bytes
