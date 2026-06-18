@@ -63,6 +63,13 @@ impl Command {
                 t!(cvt_r(|| libc::dup2(fd, libc::STDERR_FILENO)));
             }
 
+            let orig_cwd = if self.get_cwd().is_some() {
+                // Save the current working directory so we can restore it after rtpSpawn
+                crate::env::current_dir().ok()
+            } else {
+                None
+            };
+
             if let Some(cwd) = self.get_cwd() {
                 t!(cvt(libc::chdir(cwd.as_ptr())));
             }
@@ -107,6 +114,10 @@ impl Command {
             if orig_stderr != libc::STDERR_FILENO {
                 t!(cvt_r(|| libc::dup2(orig_stderr, libc::STDERR_FILENO)));
                 libc::close(orig_stderr);
+            }
+
+            if let Some(cwd) = orig_cwd {
+                let _ = crate::env::set_current_dir(cwd);
             }
 
             if ret != libc::RTP_ID_ERROR {
