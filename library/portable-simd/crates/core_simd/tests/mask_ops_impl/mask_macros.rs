@@ -220,6 +220,31 @@ macro_rules! mask_tests {
                 let expected = apply_unary_lanewise(v, core::ops::Not::not);
                 assert_eq!(!v, expected);
             }
+
+            #[test]
+            #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+            fn simd_min() {
+                use core_simd::simd::cmp::SimdOrd;
+                // Mask uses signed integer representation: true=-1, false=0.
+                // Since true < false in signed ordering, simd_min selects true
+                // when either input is true (equivalent to bitwise OR).
+                let a = from_slice(&A);
+                let b = from_slice(&B);
+                let expected = apply_binary_lanewise(a, b, |x, y| x | y);
+                assert_eq!(a.simd_min(b), expected);
+            }
+
+            #[test]
+            #[cfg_attr(target_arch = "wasm32", wasm_bindgen_test)]
+            fn simd_max() {
+                use core_simd::simd::cmp::SimdOrd;
+                // simd_max selects false when either input is false (equivalent
+                // to bitwise AND), since false > true in signed ordering.
+                let a = from_slice(&A);
+                let b = from_slice(&B);
+                let expected = apply_binary_lanewise(a, b, |x, y| x & y);
+                assert_eq!(a.simd_max(b), expected);
+            }
         }
     }
 }
