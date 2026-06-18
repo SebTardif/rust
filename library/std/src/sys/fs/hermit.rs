@@ -206,6 +206,14 @@ impl Iterator for ReadDir {
                 // Consequently, we are able to ignore the last byte.
                 let name_bytes =
                     unsafe { CStr::from_ptr(&dir.d_name as *const _ as *const c_char).to_bytes() };
+
+                // Skip `.` and `..` entries per the documented API contract
+                if name_bytes == b"." || name_bytes == b".." {
+                    counter += 1;
+                    offset = offset + usize::from(dir.d_reclen);
+                    continue;
+                }
+
                 let entry = DirEntry {
                     root: self.inner.root.clone(),
                     ino: dir.d_ino,
