@@ -667,3 +667,31 @@ fn terminate_exited_process() {
     assert!(p.kill().is_ok());
     assert!(p.kill().is_ok());
 }
+
+// Regression test: wait_with_output must return Err, not panic,
+// when reading from the stdout/stderr pipes fails.
+// Before the fix, the code used .unwrap() on the pipe read result,
+// causing a panic instead of error propagation.
+#[test]
+#[cfg(unix)]
+fn test_wait_with_output_error_not_panic() {
+    use crate::os::unix::io::AsRawFd;
+
+    let mut child = shell_cmd()
+        .arg("-c")
+        .arg("sleep 0")
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    // Close the stdout pipe fd from the parent side so that
+    // read_to_end will fail with EBADF.
+    let stdout_fd = child.stdout.as_ref().unwrap().as_raw_fd();
+    unsafe {
+        libc::close(stdout_fd);
+    }
+
+    // With the fix: returns Err. Before the fix: panics via .unwrap().
+    let result = child.wait_with_output();
+    assert!(result.is_err(), "wait_with_output should return Err when pipe read fails");
+}
