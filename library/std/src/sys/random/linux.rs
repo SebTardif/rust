@@ -140,7 +140,7 @@ fn getrandom(mut bytes: &mut [u8], insecure: bool) {
                 let ret = unsafe { libc::poll(&mut fd, 1, -1) };
                 match ret {
                     1 => {
-                        assert_eq!(fd.revents, libc::POLLIN);
+                        assert!(fd.revents & libc::POLLIN != 0);
                         URANDOM_READY.store(true, Release);
                         break;
                     }
