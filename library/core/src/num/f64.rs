@@ -596,7 +596,7 @@ impl f64 {
 
     /// The mask of the bits used to encode the exponent of an [`f64`].
     ///
-    /// Note that the exponent is stored as a biased value, with a bias of 1024 for `f64`.
+    /// Note that the exponent is stored as a biased value, with a bias of 1023 for `f64`.
     ///
     /// ```rust
     /// #![feature(float_masks)]
