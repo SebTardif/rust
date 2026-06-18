@@ -600,7 +600,10 @@ mod uefi_fs {
             let p = helpers::OwnedDevicePath::from_text(absolute.as_os_str())?;
             let (vol, mut path_remaining) = Self::open_volume_from_device_path(p.borrow())?;
 
-            let protocol = Self::open(vol, &mut path_remaining, open_mode, attr)?;
+            let result = Self::open(vol, &mut path_remaining, open_mode, attr);
+            // Close the volume root handle regardless of whether the open succeeded.
+            unsafe { ((*vol.as_ptr()).close)(vol.as_ptr()) };
+            let protocol = result?;
             Ok(Self { protocol, path: absolute })
         }
 
@@ -862,21 +865,30 @@ mod uefi_fs {
         let p = helpers::OwnedDevicePath::from_text(absolute.as_os_str())?;
         let (vol, mut path_remaining) = File::open_volume_from_device_path(p.borrow())?;
 
+        // Close the volume root handle on all exit paths via a guard closure.
+        let close_vol = || unsafe { ((*vol.as_ptr()).close)(vol.as_ptr()) };
+
         // Check if file exists
         match File::open(vol, &mut path_remaining, file::MODE_READ, 0) {
             Ok(_) => {
+                close_vol();
                 return Err(io::Error::new(io::ErrorKind::AlreadyExists, "Path already exists"));
             }
             Err(e) if e.kind() == io::ErrorKind::NotFound => {}
-            Err(e) => return Err(e),
+            Err(e) => {
+                close_vol();
+                return Err(e);
+            }
         }
 
-        let _ = File::open(
+        let result = File::open(
             vol,
             &mut path_remaining,
             file::MODE_READ | file::MODE_WRITE | file::MODE_CREATE,
             file::DIRECTORY,
-        )?;
+        );
+        close_vol();
+        result?;
 
         Ok(())
     }
