@@ -769,12 +769,16 @@ impl<'tcx> Rvalue<'tcx> {
             // <https://www.ralfj.de/blog/2022/04/11/provenance-exposed.html>
             Rvalue::Cast(CastKind::PointerExposeProvenance, _, _) => false,
 
+            // ThreadLocalRef is a runtime operation that executes code (similar to a
+            // function call). Eliminating dead stores of this rvalue can cause SIGILL.
+            // See the doc comment on Rvalue::ThreadLocalRef in syntax.rs.
+            Rvalue::ThreadLocalRef(_) => false,
+
             Rvalue::Use(_, _)
             | Rvalue::CopyForDeref(_)
             | Rvalue::Repeat(_, _)
             | Rvalue::Ref(_, _, _)
             | Rvalue::Reborrow(_, _, _)
-            | Rvalue::ThreadLocalRef(_)
             | Rvalue::RawPtr(_, _)
             | Rvalue::Cast(
                 CastKind::IntToInt
