@@ -2475,16 +2475,13 @@ impl Child {
         match (self.stdout.take(), self.stderr.take()) {
             (None, None) => {}
             (Some(mut out), None) => {
-                let res = out.read_to_end(&mut stdout);
-                res.unwrap();
+                out.read_to_end(&mut stdout)?;
             }
             (None, Some(mut err)) => {
-                let res = err.read_to_end(&mut stderr);
-                res.unwrap();
+                err.read_to_end(&mut stderr)?;
             }
             (Some(out), Some(err)) => {
-                let res = imp::read_output(out.inner, &mut stdout, err.inner, &mut stderr);
-                res.unwrap();
+                imp::read_output(out.inner, &mut stdout, err.inner, &mut stderr)?;
             }
         }
 

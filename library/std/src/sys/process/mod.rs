@@ -59,16 +59,13 @@ pub fn output(cmd: &mut Command) -> crate::io::Result<(ExitStatus, Vec<u8>, Vec<
     match (pipes.stdout.take(), pipes.stderr.take()) {
         (None, None) => {}
         (Some(out), None) => {
-            let res = out.read_to_end(&mut stdout);
-            res.unwrap();
+            out.read_to_end(&mut stdout)?;
         }
         (None, Some(err)) => {
-            let res = err.read_to_end(&mut stderr);
-            res.unwrap();
+            err.read_to_end(&mut stderr)?;
         }
         (Some(out), Some(err)) => {
-            let res = read_output(out, &mut stdout, err, &mut stderr);
-            res.unwrap();
+            read_output(out, &mut stdout, err, &mut stderr)?;
         }
     }
 
