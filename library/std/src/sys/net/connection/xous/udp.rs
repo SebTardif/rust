@@ -179,10 +179,11 @@ impl UdpSocket {
                 } else {
                     return Err(io::const_error!(io::ErrorKind::Other, "library error"));
                 };
-                for (&s, d) in rr[22..22 + rxlen as usize].iter().zip(buf.iter_mut()) {
+                let copy_len = (rxlen as usize).min(buf.len());
+                for (&s, d) in rr[22..22 + copy_len].iter().zip(buf.iter_mut()) {
                     *d = s;
                 }
-                Ok((rxlen as usize, addr))
+                Ok((copy_len, addr))
             }
         } else {
             Err(io::const_error!(io::ErrorKind::InvalidInput, "unable to recv"))
