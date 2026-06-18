@@ -902,6 +902,7 @@ mod uefi_command_internal {
             res.push(QUOTE);
         }
 
+        res.push(NULL);
         res.into_boxed_slice()
     }
 }
