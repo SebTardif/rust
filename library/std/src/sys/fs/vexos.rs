@@ -253,7 +253,9 @@ impl File {
                     } else {
                         // Open in append, but jump to the start of the file.
                         let fd = vex_sdk::vexFileOpenWrite(path.as_ptr());
-                        vex_sdk::vexFileSeek(fd, 0, 0);
+                        if !fd.is_null() {
+                            map_fresult(vex_sdk::vexFileSeek(fd, 0, 0))?;
+                        }
                         fd
                     }
                 },
