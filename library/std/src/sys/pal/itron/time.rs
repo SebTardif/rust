@@ -80,7 +80,7 @@ pub fn with_tmos_strong(dur: Duration, mut f: impl FnMut(abi::TMO) -> abi::ER) -
     let mut elapsed = 0;
     let mut er = abi::E_TMOUT;
     while elapsed <= ticks {
-        er = f(elapsed.min(abi::TMAX_RELTIM as abi::SYSTIM) as abi::TMO);
+        er = f((ticks - elapsed).min(abi::TMAX_RELTIM as abi::SYSTIM) as abi::TMO);
         if er != abi::E_TMOUT {
             break;
         }
