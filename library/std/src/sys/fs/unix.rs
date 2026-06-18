@@ -607,7 +607,10 @@ impl FileAttr {
     }
 
     pub fn created(&self) -> io::Result<SystemTime> {
-        SystemTime::new(self.stat.st_ctim.tv_sec as i64, self.stat.st_ctim.tv_nsec as i64)
+        Err(io::const_error!(
+            io::ErrorKind::Unsupported,
+            "creation time is not available on AIX",
+        ))
     }
 }
 
@@ -747,7 +750,10 @@ impl FileAttr {
     }
 
     pub fn created(&self) -> io::Result<SystemTime> {
-        SystemTime::new(self.stat.st_ctim.tv_sec, self.stat.st_ctim.tv_nsec.into())
+        Err(io::const_error!(
+            io::ErrorKind::Unsupported,
+            "creation time is not available on this platform",
+        ))
     }
 }
 
