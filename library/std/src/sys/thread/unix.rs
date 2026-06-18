@@ -290,7 +290,7 @@ pub fn available_parallelism() -> io::Result<NonZero<usize>> {
             if unsafe { libc::pset_info(libc::PS_MYID, core::ptr::null_mut(), &mut cpus, core::ptr::null_mut()) } != 0 {
                 return Err(io::Error::UNKNOWN_THREAD_COUNT);
             }
-            Ok(unsafe { NonZero::new_unchecked(cpus as usize) })
+            NonZero::new(cpus as usize).ok_or(io::Error::UNKNOWN_THREAD_COUNT)
         }
         target_os = "haiku" => {
             // system_info cpu_count field gets the static data set at boot time with `smp_set_num_cpus`
