@@ -125,7 +125,7 @@ impl Command {
         } else {
             default.try_clone()?.into_rt()
         };
-        let stderr = if let Some(stderr) = self.stdout.as_ref() {
+        let stderr = if let Some(stderr) = self.stderr.as_ref() {
             stderr.try_clone()?.into_rt()
         } else {
             default.try_clone()?.into_rt()
