@@ -50,6 +50,10 @@ impl Command {
             let mut orig_stdout = libc::STDOUT_FILENO;
             let mut orig_stderr = libc::STDERR_FILENO;
 
+            if let Some(cwd) = self.get_cwd() {
+                t!(cvt(libc::chdir(cwd.as_ptr())));
+            }
+
             if let Some(fd) = theirs.stdin.fd() {
                 orig_stdin = t!(cvt_r(|| libc::dup(libc::STDIN_FILENO)));
                 t!(cvt_r(|| libc::dup2(fd, libc::STDIN_FILENO)));
@@ -61,10 +65,6 @@ impl Command {
             if let Some(fd) = theirs.stderr.fd() {
                 orig_stderr = t!(cvt_r(|| libc::dup(libc::STDERR_FILENO)));
                 t!(cvt_r(|| libc::dup2(fd, libc::STDERR_FILENO)));
-            }
-
-            if let Some(cwd) = self.get_cwd() {
-                t!(cvt(libc::chdir(cwd.as_ptr())));
             }
 
             // pre_exec closures are ignored on VxWorks
