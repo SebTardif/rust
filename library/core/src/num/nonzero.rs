@@ -1848,11 +1848,18 @@ macro_rules! nonzero_integer_signedness_dependent_methods {
         #[doc(alias = "average")]
         #[inline]
         pub const fn midpoint(self, rhs: Self) -> Self {
-            // SAFETY: The only way to get `0` with midpoint is to have two opposite or
-            // near opposite numbers: (-5, 5), (0, 1), (0, 0) which is impossible because
-            // of the unsignedness of this number and also because `Self` is guaranteed to
-            // never being 0.
-            unsafe { Self::new_unchecked(self.get().midpoint(rhs.get())) }
+            let mid = self.get().midpoint(rhs.get());
+            // SAFETY: For unsigned NonZero types, the midpoint of two positive
+            // values (both >= 1) is always >= 1, so the result is non-zero.
+            // For signed NonZero types, the mathematical midpoint of two
+            // non-zero values with opposite signs can be exactly zero (e.g.,
+            // midpoint(1, -1) = 0). In that case, we must not call
+            // new_unchecked. Use `new` with an expect to produce a panic
+            // instead of undefined behavior.
+            match Self::new(mid) {
+                Some(v) => v,
+                None => panic!("midpoint of two NonZero values was zero"),
+            }
         }
 
         /// Returns `true` if and only if `self == (1 << k)` for some `k`.
