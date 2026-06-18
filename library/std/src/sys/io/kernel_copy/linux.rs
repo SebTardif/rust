@@ -780,13 +780,19 @@ fn sendfile_splice(mode: SpliceMode, reader: RawFd, writer: RawFd, len: u64) -> 
                             SpliceMode::Sendfile => HAS_SENDFILE.store(false, Ordering::Relaxed),
                             SpliceMode::Splice => HAS_SPLICE.store(false, Ordering::Relaxed),
                         }
-                        assert_eq!(written, 0);
-                        CopyResult::Fallback(0)
+                        if written == 0 {
+                            CopyResult::Fallback(0)
+                        } else {
+                            CopyResult::Error(err, written)
+                        }
                     }
                     Some(EINVAL) => {
                         // splice/sendfile do not support this particular file descriptor (EINVAL)
-                        assert_eq!(written, 0);
-                        CopyResult::Fallback(0)
+                        if written == 0 {
+                            CopyResult::Fallback(0)
+                        } else {
+                            CopyResult::Error(err, written)
+                        }
                     }
                     Some(os_err) if mode == SpliceMode::Sendfile && os_err == EOVERFLOW => {
                         CopyResult::Fallback(written)
