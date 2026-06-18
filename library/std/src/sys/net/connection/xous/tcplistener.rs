@@ -167,8 +167,24 @@ impl TcpListener {
 
                 // replenish the listener
                 let mut local_copy = self.local.clone(); // port is non-0 by this time, but the method signature needs a mut
-                let new_fd = TcpListener::bind_inner(&mut local_copy)?;
-                self.fd.store(new_fd, Ordering::Relaxed);
+                match TcpListener::bind_inner(&mut local_copy) {
+                    Ok(new_fd) => {
+                        self.fd.store(new_fd, Ordering::Relaxed);
+                    }
+                    Err(_) => {
+                        // Drop the accepted stream fd to avoid leaking it
+                        drop(TcpStream::from_listener(
+                            stream_fd,
+                            self.local.port(),
+                            port,
+                            addr,
+                        ));
+                        return Err(io::const_error!(
+                            io::ErrorKind::Other,
+                            "failed to replenish listener",
+                        ));
+                    }
+                }
 
                 // now return a stream converted from the old stream's fd
                 Ok((TcpStream::from_listener(stream_fd, self.local.port(), port, addr), addr))
