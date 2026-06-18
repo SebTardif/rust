@@ -833,7 +833,11 @@ impl<Cx: PatCx> Constructor<Cx> {
                 self_from.ge(other_from)
                     && match self_to.partial_cmp(other_to) {
                         Some(Ordering::Less) => true,
-                        Some(Ordering::Equal) => other_end == self_end,
+                        // [a, b) is covered by [a, b], but [a, b] is NOT covered by [a, b)
+                        Some(Ordering::Equal) => {
+                            *self_end == RangeEnd::Excluded
+                                || *other_end == RangeEnd::Included
+                        }
                         _ => false,
                     }
             }
@@ -841,7 +845,10 @@ impl<Cx: PatCx> Constructor<Cx> {
                 self_from.ge(other_from)
                     && match self_to.partial_cmp(other_to) {
                         Some(Ordering::Less) => true,
-                        Some(Ordering::Equal) => other_end == self_end,
+                        Some(Ordering::Equal) => {
+                            *self_end == RangeEnd::Excluded
+                                || *other_end == RangeEnd::Included
+                        }
                         _ => false,
                     }
             }
@@ -849,7 +856,10 @@ impl<Cx: PatCx> Constructor<Cx> {
                 self_from.ge(other_from)
                     && match self_to.partial_cmp(other_to) {
                         Some(Ordering::Less) => true,
-                        Some(Ordering::Equal) => other_end == self_end,
+                        Some(Ordering::Equal) => {
+                            *self_end == RangeEnd::Excluded
+                                || *other_end == RangeEnd::Included
+                        }
                         _ => false,
                     }
             }
@@ -860,7 +870,10 @@ impl<Cx: PatCx> Constructor<Cx> {
                 self_from.ge(other_from)
                     && match self_to.partial_cmp(other_to) {
                         Some(Ordering::Less) => true,
-                        Some(Ordering::Equal) => other_end == self_end,
+                        Some(Ordering::Equal) => {
+                            *self_end == RangeEnd::Excluded
+                                || *other_end == RangeEnd::Included
+                        }
                         _ => false,
                     }
             }
