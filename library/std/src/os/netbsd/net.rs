@@ -2,7 +2,7 @@
 
 #![unstable(feature = "unix_socket_ancillary_data", issue = "76915")]
 
-use crate::ffi::CStr;
+use crate::ffi::{CStr, CString};
 use crate::io;
 use crate::os::unix::net;
 use crate::sys::AsInner;
@@ -43,7 +43,7 @@ pub impl(self) trait UnixSocketExt {
 
     /// Gets a filter name if one had been set previously on the socket.
     #[unstable(feature = "acceptfilter", issue = "121891")]
-    fn acceptfilter(&self) -> io::Result<&CStr>;
+    fn acceptfilter(&self) -> io::Result<CString>;
 
     /// Set or disable a filter on the socket to filter incoming connections
     /// to defer it before accept(2)
@@ -61,7 +61,7 @@ impl UnixSocketExt for net::UnixDatagram {
         self.as_inner().set_local_creds(local_creds)
     }
 
-    fn acceptfilter(&self) -> io::Result<&CStr> {
+    fn acceptfilter(&self) -> io::Result<CString> {
         self.as_inner().acceptfilter()
     }
 
@@ -80,7 +80,7 @@ impl UnixSocketExt for net::UnixStream {
         self.as_inner().set_local_creds(local_creds)
     }
 
-    fn acceptfilter(&self) -> io::Result<&CStr> {
+    fn acceptfilter(&self) -> io::Result<CString> {
         self.as_inner().acceptfilter()
     }
 
