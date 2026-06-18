@@ -59,7 +59,7 @@ impl SystemTime {
                 tm_year: rtc.tm_year,
                 tm_wday: rtc.tm_wday,
                 tm_yday: 0,
-                tm_isdst: 0,
+                tm_isdst: -1,
                 tm_gmtoff: 0,
                 tm_zone: crate::ptr::null_mut(),
             })
