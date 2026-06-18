@@ -36,7 +36,7 @@ pub(crate) const fn from_uefi(t: &Time) -> Option<Duration> {
         && t.day <= 31
         && t.day != 0
         && t.second < 60
-        && t.minute <= 60
+        && t.minute < 60
         && t.hour < 24
         && t.nanosecond < 1_000_000_000
         && ((t.timezone <= 1440 && t.timezone >= -1440)
