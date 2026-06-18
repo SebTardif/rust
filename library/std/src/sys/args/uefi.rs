@@ -98,8 +98,9 @@ fn parse_lp_cmd_line(code_units: &[u16]) -> Option<Vec<OsString>> {
                 // Skip whitespace.
                 while code_units_iter.next_if_eq(&Ok(SPACE)).is_some() {}
             }
-            // Caret can escape quotes or carets
-            CARET if in_quotes => {
+            // Caret escapes the next character (quotes or carets) in both
+            // quoted and unquoted contexts per UEFI Shell Spec Section 3.4.
+            CARET => {
                 if let Some(x) = code_units_iter.next() {
                     cur.push(x.ok()?);
                 }
