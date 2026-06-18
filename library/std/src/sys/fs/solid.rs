@@ -183,7 +183,18 @@ impl Iterator for ReadDir {
             }
         };
 
-        (entry.d_name[0] != 0).then(|| Ok(DirEntry { entry, inner: Arc::clone(&self.inner) }))
+        if entry.d_name[0] == 0 {
+            return None;
+        }
+
+        // Skip `.` and `..` entries per the documented API contract
+        let name =
+            unsafe { CStr::from_ptr(entry.d_name.as_ptr()) }.to_bytes();
+        if name == b"." || name == b".." {
+            return self.next();
+        }
+
+        Some(Ok(DirEntry { entry, inner: Arc::clone(&self.inner) }))
     }
 }
 
