@@ -181,6 +181,11 @@ impl Timespec {
     // is 2^64 nanoseconds
     #[cfg(target_os = "nto")]
     pub(in crate::sys) fn to_timespec_capped(&self) -> Option<libc::timespec> {
+        // Negative tv_sec means the timeout has already passed (e.g., clock
+        // adjustment). Let the OS handle it; it will return ETIMEDOUT.
+        if self.tv_sec < 0 {
+            return self.to_timespec();
+        }
         // Check if timeout in nanoseconds would fit into an u64
         if (self.tv_nsec.as_inner() as u64)
             .checked_add((self.tv_sec as u64).checked_mul(NSEC_PER_SEC)?)
