@@ -24,12 +24,13 @@ pub fn env() -> Env {
     unsafe {
         let _guard = env_read_lock();
         let mut result = Vec::new();
-        if !environ.is_null() {
-            while !(*environ).is_null() {
-                if let Some(key_value) = parse(CStr::from_ptr(*environ).to_bytes()) {
+        let mut current = environ;
+        if !current.is_null() {
+            while !(*current).is_null() {
+                if let Some(key_value) = parse(CStr::from_ptr(*current).to_bytes()) {
                     result.push(key_value);
                 }
-                environ = environ.add(1);
+                current = current.add(1);
             }
         }
         return Env::new(result);
