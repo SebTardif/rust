@@ -148,9 +148,10 @@ pub(crate) fn device_path_to_text(path: NonNull<device_path::Protocol>) -> io::R
             )
         };
 
-        let path = os_string_from_raw(path_ptr)
-            .ok_or(io::const_error!(io::ErrorKind::InvalidData, "invalid path"))?;
+        let path = os_string_from_raw(path_ptr);
 
+        // Free the pool-allocated buffer before checking the result, so it is
+        // not leaked when os_string_from_raw returns None.
         if let Some(boot_services) = crate::os::uefi::env::boot_services() {
             let boot_services: NonNull<r_efi::efi::BootServices> = boot_services.cast();
             unsafe {
@@ -158,7 +159,7 @@ pub(crate) fn device_path_to_text(path: NonNull<device_path::Protocol>) -> io::R
             }
         }
 
-        Ok(path)
+        path.ok_or(io::const_error!(io::ErrorKind::InvalidData, "invalid path"))
     }
 
     static LAST_VALID_HANDLE: Atomic<*mut crate::ffi::c_void> =
@@ -202,9 +203,10 @@ fn device_node_to_text(path: NonNull<device_path::Protocol>) -> io::Result<OsStr
             )
         };
 
-        let path = os_string_from_raw(path_ptr)
-            .ok_or(io::const_error!(io::ErrorKind::InvalidData, "Invalid path"))?;
+        let path = os_string_from_raw(path_ptr);
 
+        // Free the pool-allocated buffer before checking the result, so it is
+        // not leaked when os_string_from_raw returns None.
         if let Some(boot_services) = crate::os::uefi::env::boot_services() {
             let boot_services: NonNull<r_efi::efi::BootServices> = boot_services.cast();
             unsafe {
@@ -212,7 +214,7 @@ fn device_node_to_text(path: NonNull<device_path::Protocol>) -> io::Result<OsStr
             }
         }
 
-        Ok(path)
+        path.ok_or(io::const_error!(io::ErrorKind::InvalidData, "Invalid path"))
     }
 
     static LAST_VALID_HANDLE: AtomicPtr<crate::ffi::c_void> =
