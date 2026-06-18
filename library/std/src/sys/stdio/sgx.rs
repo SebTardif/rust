@@ -91,9 +91,11 @@ impl io::Write for Stderr {
 
 pub const STDIN_BUF_SIZE: usize = crate::sys::io::DEFAULT_BUF_SIZE;
 
-pub fn is_ebadf(err: &io::Error) -> bool {
-    // FIXME: Rust normally maps Unix EBADF to `Uncategorized`
-    err.raw_os_error() == Some(abi::Error::BrokenPipe as _)
+pub fn is_ebadf(_err: &io::Error) -> bool {
+    // The SGX ABI does not have an EBADF equivalent. Stdio fds are fixed
+    // (FD_STDIN/FD_STDOUT/FD_STDERR), so if a write fails, treat it as a
+    // detached fd and silently succeed, matching other embedded platforms.
+    true
 }
 
 pub fn panic_output() -> Option<impl io::Write> {
