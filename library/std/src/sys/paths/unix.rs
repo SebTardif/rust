@@ -236,9 +236,9 @@ pub fn current_exe() -> io::Result<PathBuf> {
         let mib = mib.as_mut_ptr();
         let mut argv_len = 0;
         cvt(libc::sysctl(mib, 4, ptr::null_mut(), &mut argv_len, ptr::null_mut(), 0))?;
-        let mut argv = Vec::<*const libc::c_char>::with_capacity(argv_len as usize);
+        let mut argv = Vec::<*const libc::c_char>::with_capacity(argv_len as usize / size_of::<*const libc::c_char>());
         cvt(libc::sysctl(mib, 4, argv.as_mut_ptr() as *mut _, &mut argv_len, ptr::null_mut(), 0))?;
-        argv.set_len(argv_len as usize);
+        argv.set_len(argv_len as usize / size_of::<*const libc::c_char>());
         if argv[0].is_null() {
             return Err(io::const_error!(io::ErrorKind::Uncategorized, "no current exe available"));
         }
