@@ -184,12 +184,12 @@ macro_rules! impl_mask {
         {
             #[inline]
             fn simd_max(self, other: Self) -> Self {
-                self.simd_gt(other).select(other, self)
+                self.simd_lt(other).select(other, self)
             }
 
             #[inline]
             fn simd_min(self, other: Self) -> Self {
-                self.simd_lt(other).select(other, self)
+                self.simd_gt(other).select(other, self)
             }
 
             #[inline]
