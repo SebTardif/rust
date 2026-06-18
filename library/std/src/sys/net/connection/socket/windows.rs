@@ -329,7 +329,10 @@ impl Socket {
                 let error = unsafe { c::WSAGetLastError() };
 
                 if error == c::WSAESHUTDOWN {
-                    Ok((0, unsafe { socket_addr_from_c(&storage, addrlen as usize)? }))
+                    // The recvfrom call failed, so `storage` was not populated
+                    // by the OS. Use a dummy unspecified address instead.
+                    let addr = SocketAddr::from(([0, 0, 0, 0], 0));
+                    Ok((0, addr))
                 } else {
                     Err(io::Error::from_raw_os_error(error))
                 }
