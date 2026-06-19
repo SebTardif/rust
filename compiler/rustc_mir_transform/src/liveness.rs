@@ -238,6 +238,7 @@ fn maybe_drop_guard<'tcx>(
         matches!(
             ty.kind(),
             ty::Closure(..)
+                | ty::CoroutineClosure(..)
                 | ty::Coroutine(..)
                 | ty::Tuple(..)
                 | ty::Adt(..)
