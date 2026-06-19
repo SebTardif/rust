@@ -101,8 +101,8 @@ impl Socket {
                 0 => {}
                 _ => {
                     // linux returns POLLOUT|POLLERR|POLLHUP for refused connections (!), so look
-                    // for POLLHUP rather than read readiness
-                    if pollfd.revents & netc::POLLHUP != 0 {
+                    // for POLLHUP or POLLERR rather than read readiness
+                    if pollfd.revents & (netc::POLLHUP | netc::POLLERR) != 0 {
                         let e = self.take_error()?.unwrap_or_else(|| {
                             io::const_error!(
                                 io::ErrorKind::Uncategorized,
