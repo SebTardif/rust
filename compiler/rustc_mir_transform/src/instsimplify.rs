@@ -390,7 +390,9 @@ impl<'tcx> InstSimplifyContext<'_, 'tcx> {
         let body_abi = match body_ty.kind() {
             ty::FnDef(..) => body_ty.fn_sig(self.tcx).abi(),
             ty::Closure(..) => ExternAbi::RustCall,
+            ty::CoroutineClosure(..) => ExternAbi::RustCall,
             ty::Coroutine(..) => ExternAbi::Rust,
+            ty::Error(_) => return,
             _ => bug!("unexpected body ty: {body_ty:?}"),
         };
 
