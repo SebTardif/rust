@@ -418,11 +418,9 @@ fn compute_discriminant_value<'ll, 'tcx>(
                     .unwrap()
                     .valid_range;
 
-                let min = valid_range.start.min(valid_range.end);
-                let min = tag.size(cx).truncate(min);
+                let min = tag.size(cx).truncate(valid_range.start);
 
-                let max = valid_range.start.max(valid_range.end);
-                let max = tag.size(cx).truncate(max);
+                let max = tag.size(cx).truncate(valid_range.end);
 
                 DiscrResult::Range(min, max)
             } else {
