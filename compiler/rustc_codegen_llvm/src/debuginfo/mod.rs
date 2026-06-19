@@ -210,7 +210,6 @@ impl<'ll, 'tcx> DebugInfoBuilderMethods<'tcx> for Builder<'_, 'll, 'tcx> {
         if direct_offset.bytes() > 0 {
             addr_ops.push(DW_OP_plus_uconst);
             addr_ops.push(direct_offset.bytes() as u64);
-            addr_ops.push(DW_OP_stack_value);
         }
         for &offset in indirect_offsets {
             addr_ops.push(DW_OP_deref);
@@ -218,6 +217,9 @@ impl<'ll, 'tcx> DebugInfoBuilderMethods<'tcx> for Builder<'_, 'll, 'tcx> {
                 addr_ops.push(DW_OP_plus_uconst);
                 addr_ops.push(offset.bytes() as u64);
             }
+        }
+        if direct_offset.bytes() > 0 || !indirect_offsets.is_empty() {
+            addr_ops.push(DW_OP_stack_value);
         }
         if let Some(fragment) = fragment {
             // `DW_OP_LLVM_fragment` takes as arguments the fragment's
