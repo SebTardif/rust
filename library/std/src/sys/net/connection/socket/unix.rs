@@ -368,17 +368,29 @@ impl Socket {
     }
 
     pub fn write_vectored(&self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
-        self.0.write_vectored(bufs)
+        self.send_vectored_with_flags(bufs, super::MSG_NOSIGNAL)
+    }
+
+    pub fn send_vectored_with_flags(
+        &self,
+        bufs: &[IoSlice<'_>],
+        flags: c_int,
+    ) -> io::Result<usize> {
+        let mut msg: libc::msghdr = unsafe { crate::mem::zeroed() };
+        msg.msg_iov = bufs.as_ptr() as *mut libc::iovec;
+        msg.msg_iovlen = bufs.len() as _;
+        let n = cvt(unsafe { libc::sendmsg(self.as_raw_fd(), &msg, flags) })?;
+        Ok(n as usize)
     }
 
     #[inline]
     pub fn is_write_vectored(&self) -> bool {
-        self.0.is_write_vectored()
+        true
     }
 
     #[cfg(any(target_os = "android", target_os = "linux", target_os = "cygwin"))]
     pub fn send_msg(&self, msg: &mut libc::msghdr) -> io::Result<usize> {
-        let n = cvt(unsafe { libc::sendmsg(self.as_raw_fd(), msg, 0) })?;
+        let n = cvt(unsafe { libc::sendmsg(self.as_raw_fd(), msg, super::MSG_NOSIGNAL) })?;
         Ok(n as usize)
     }
 
