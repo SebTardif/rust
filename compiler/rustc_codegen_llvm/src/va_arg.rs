@@ -253,7 +253,7 @@ fn emit_aapcs_va_arg<'ll, 'tcx>(
         PassMode::Direct,
         SlotSize::Bytes8,
         AllowHigherAlign::Yes,
-        ForceRightAdjust::No,
+        ForceRightAdjust::Yes,
     );
     bx.br(end);
 
