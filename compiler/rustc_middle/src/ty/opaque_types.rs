@@ -160,6 +160,11 @@ impl<'tcx> TypeFolder<TyCtxt<'tcx>> for ReverseMapper<'tcx> {
                 Ty::new_coroutine_witness(self.tcx, def_id, args)
             }
 
+            ty::CoroutineClosure(def_id, args) => {
+                let args = self.fold_closure_args(def_id, args);
+                Ty::new_coroutine_closure(self.tcx, def_id, args)
+            }
+
             ty::Param(param) => {
                 // Look it up in the generic parameters list.
                 match self.map.get(&ty.into()).map(|arg| arg.kind()) {
@@ -214,7 +219,7 @@ impl<'tcx> TypeFolder<TyCtxt<'tcx>> for ReverseMapper<'tcx> {
                 }
             }
 
-            _ => ct,
+            _ => ct.super_fold_with(self),
         }
     }
 }
