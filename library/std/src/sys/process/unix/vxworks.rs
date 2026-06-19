@@ -70,10 +70,6 @@ impl Command {
             // pre_exec closures are ignored on VxWorks
             let _ = self.get_closures();
 
-            let c_envp = envp
-                .as_ref()
-                .map(|c| c.as_ptr())
-                .unwrap_or_else(|| *sys::env::environ() as *const _);
             let stack_size = crate::cmp::max(
                 crate::env::var_os("RUST_MIN_STACK")
                     .and_then(|s| s.to_str().and_then(|s| s.parse().ok()))
@@ -83,6 +79,11 @@ impl Command {
 
             // ensure that access to the environment is synchronized
             let _lock = sys::env::env_read_lock();
+
+            let c_envp = envp
+                .as_ref()
+                .map(|c| c.as_ptr())
+                .unwrap_or_else(|| *sys::env::environ() as *const _);
 
             let ret = libc::rtpSpawn(
                 self.get_program_cstr().as_ptr(),
