@@ -572,7 +572,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
                         self.read_immediate(&self.project_index(&right, right_idx)?)?
                     } else {
                         throw_ub_format!(
-                            "`simd_shuffle_const_generic` index {src_index} is out-of-bounds for 2 vectors with length {dest_len}"
+                            "`simd_shuffle_const_generic` index {src_index} is out-of-bounds for 2 vectors with length {left_len}"
                         );
                     };
                     self.write_immediate(*val, &dest)?;
@@ -602,7 +602,7 @@ impl<'tcx, M: Machine<'tcx>> InterpCx<'tcx, M> {
                         self.read_immediate(&self.project_index(&right, right_idx)?)?
                     } else {
                         throw_ub_format!(
-                            "`simd_shuffle` index {src_index} is out-of-bounds for 2 vectors with length {dest_len}"
+                            "`simd_shuffle` index {src_index} is out-of-bounds for 2 vectors with length {left_len}"
                         );
                     };
                     self.write_immediate(*val, &dest)?;
