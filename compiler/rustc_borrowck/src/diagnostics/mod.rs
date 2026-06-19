@@ -526,7 +526,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                 ty::Array(ty, _) | ty::Slice(ty) => {
                     self.describe_field_from_ty(ty, field, variant_index, including_tuple_field)
                 }
-                ty::Closure(def_id, _) | ty::Coroutine(def_id, _) => {
+                ty::Closure(def_id, _) | ty::CoroutineClosure(def_id, _) | ty::Coroutine(def_id, _) => {
                     // We won't be borrowck'ing here if the closure came from another crate,
                     // so it's safe to call `expect_local`.
                     //
