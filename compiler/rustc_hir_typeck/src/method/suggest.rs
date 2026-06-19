@@ -1824,7 +1824,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     }
                 }
                 // Point at the closure that couldn't satisfy the bound.
-                ty::Closure(def_id, _) => {
+                ty::Closure(def_id, _) | ty::CoroutineClosure(def_id, _) => {
                     bound_spans
                         .get_mut_or_insert_default(tcx.def_span(*def_id))
                         .push(format!("`{quiet}`"));

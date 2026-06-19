@@ -2553,7 +2553,9 @@ impl fmt::Display for TyCategory {
 impl TyCategory {
     pub fn from_ty(tcx: TyCtxt<'_>, ty: Ty<'_>) -> Option<(Self, DefId)> {
         match *ty.kind() {
-            ty::Closure(def_id, _) => Some((Self::Closure, def_id)),
+            ty::Closure(def_id, _) | ty::CoroutineClosure(def_id, _) => {
+                Some((Self::Closure, def_id))
+            }
             ty::Alias(ty::AliasTy { kind: ty::Opaque { def_id }, .. }) => {
                 let kind =
                     if tcx.ty_is_opaque_future(ty) { Self::OpaqueFuture } else { Self::Opaque };
