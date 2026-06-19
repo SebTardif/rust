@@ -2552,7 +2552,7 @@ impl<T: BufRead, U: BufRead> BufRead for Chain<T, U> {
 impl<T, U> SizeHint for Chain<T, U> {
     #[inline]
     fn lower_bound(&self) -> usize {
-        SizeHint::lower_bound(&self.first) + SizeHint::lower_bound(&self.second)
+        SizeHint::lower_bound(&self.first).saturating_add(SizeHint::lower_bound(&self.second))
     }
 
     #[inline]
