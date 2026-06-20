@@ -1,14 +1,22 @@
 // Reference: ELF Application Binary Interface s390x Supplement
 // https://github.com/IBM/s390x-abi
 
-use rustc_abi::{BackendRepr, HasDataLayout, TyAbiInterface};
+use rustc_abi::{BackendRepr, Float, HasDataLayout, Primitive, TyAbiInterface};
 
 use crate::callconv::{ArgAbi, FnAbi, Reg};
 use crate::spec::{Env, HasTargetSpec, Os};
 
+fn is_f128_scalar<Ty>(arg: &ArgAbi<'_, Ty>) -> bool {
+    matches!(arg.layout.backend_repr, BackendRepr::Scalar(s) if s.primitive() == Primitive::Float(Float::F128))
+}
+
 fn classify_ret<Ty>(ret: &mut ArgAbi<'_, Ty>) {
     let size = ret.layout.size;
     if size.bits() <= 128 && matches!(ret.layout.backend_repr, BackendRepr::SimdVector { .. }) {
+        return;
+    }
+    // f128 is returned in FPR pair (f0, f2); leave as Direct for LLVM.
+    if is_f128_scalar(ret) {
         return;
     }
     if !ret.layout.is_aggregate() && size.bits() <= 64 {
@@ -55,6 +63,10 @@ where
             return;
         }
     }
+    // f128 is passed in FPR pair (f0+f2, f4+f6); leave as Direct for LLVM.
+    if is_f128_scalar(arg) {
+        return;
+    }
     if !arg.layout.is_aggregate() && size.bits() <= 64 {
         arg.extend_integer_width_to(64);
         return;
@@ -64,6 +76,7 @@ where
         match size.bytes() {
             4 => arg.cast_to(Reg::f32()),
             8 => arg.cast_to(Reg::f64()),
+            16 => arg.cast_to(Reg::f128()),
             _ => arg.make_indirect(),
         }
     } else {

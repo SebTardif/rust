@@ -153,7 +153,7 @@ impl<'a, Ty> TyAndLayout<'a, Ty> {
     {
         match self.backend_repr {
             BackendRepr::Scalar(scalar) => {
-                matches!(scalar.primitive(), Primitive::Float(Float::F32 | Float::F64))
+                matches!(scalar.primitive(), Primitive::Float(Float::F32 | Float::F64 | Float::F128))
             }
             BackendRepr::Memory { .. } => {
                 if self.fields.count() == 1 && self.fields.offset(0).bytes() == 0 {
