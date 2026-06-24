@@ -36,6 +36,7 @@ mod midpoint;
 mod nan;
 mod niche_types;
 mod ops;
+mod saturating;
 mod wrapping;
 
 use floats::{assert_biteq, float_test};

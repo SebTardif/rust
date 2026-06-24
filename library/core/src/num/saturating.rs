@@ -386,7 +386,7 @@ macro_rules! saturating_impl {
 
             #[inline]
             fn rem(self, other: Saturating<$t>) -> Saturating<$t> {
-                Saturating(self.0.rem(other.0))
+                Saturating(self.0.wrapping_rem(other.0))
             }
         }
         forward_ref_binop! { impl Rem, rem for Saturating<$t>, Saturating<$t>,
