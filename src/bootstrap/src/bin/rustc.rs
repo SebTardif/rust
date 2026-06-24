@@ -100,7 +100,7 @@ fn main() {
     let crate_name = parse_value_from_args(&orig_args, "--crate-name");
 
     // When statically linking `std` into `rustc_driver`, remove `-C prefer-dynamic`
-    if env::var("RUSTC_LINK_STD_INTO_RUSTC_DRIVER").unwrap() == "1"
+    if env::var("RUSTC_LINK_STD_INTO_RUSTC_DRIVER").as_deref() == Ok("1")
         && crate_name == Some("rustc_driver")
     {
         if let Some(pos) = args.iter().enumerate().position(|(i, a)| {
