@@ -337,7 +337,7 @@ fn dir_up_to_date(src: &Path, threshold: SystemTime) -> bool {
         if meta.is_dir() {
             dir_up_to_date(&e.path(), threshold)
         } else {
-            meta.modified().unwrap_or(UNIX_EPOCH) < threshold
+            meta.modified().unwrap_or(UNIX_EPOCH) <= threshold
         }
     })
 }
