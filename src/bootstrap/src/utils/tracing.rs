@@ -348,8 +348,9 @@ mod inner {
 
                     // There should be only one more field called `args`
                     if let Some(values) = field_values {
-                        let field = &values.fields[0];
-                        write!(writer, " {{{}}}", field.1)?;
+                        if let Some(field) = values.fields.first() {
+                            write!(writer, " {{{}}}", field.1)?;
+                        }
                     }
                     write_location(writer, span.metadata())?;
                 }
