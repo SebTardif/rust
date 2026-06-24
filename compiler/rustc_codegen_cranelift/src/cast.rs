@@ -35,6 +35,76 @@ pub(crate) fn clif_int_or_float_cast(
     to_ty: Type,
     to_signed: bool,
 ) -> Value {
+    clif_int_or_float_cast_inner(fx, from, from_signed, to_ty, to_signed, true)
+}
+
+/// Float-to-int without saturation or NaN-to-zero. Matches SSA/LLVM `fptosi`/`fptoui`
+/// for `float_to_int_unchecked` / `to_int_unchecked` (out-of-range/NaN is undef).
+pub(crate) fn clif_float_to_int_unchecked(
+    fx: &mut FunctionCx<'_, '_, '_>,
+    from: Value,
+    to_ty: Type,
+    to_signed: bool,
+) -> Value {
+    let from_ty = fx.bcx.func.dfg.value_type(from);
+
+    if matches!(from_ty, types::F16 | types::F128)
+        || matches!(to_ty, types::F16 | types::F128) && from_ty != to_ty
+    {
+        // f16/f128 path has no separate non-saturating lowering; use normal cast.
+        // Callers with those types are rare under cg_clif.
+        return clif_int_or_float_cast_inner(fx, from, false, to_ty, to_signed, false);
+    }
+
+    if !from_ty.is_float() || !to_ty.is_int() {
+        unreachable!("clif_float_to_int_unchecked: expected float->int, got {:?} -> {:?}", from_ty, to_ty);
+    }
+
+    if to_ty == types::I128 {
+        let name = format!(
+            "__fix{sign}{flt}fti",
+            sign = if to_signed { "" } else { "uns" },
+            flt = match from_ty {
+                types::F16 => "h",
+                types::F32 => "s",
+                types::F64 => "d",
+                types::F128 => "t",
+                _ => unreachable!("{:?}", from_ty),
+            },
+        );
+        return fx.lib_call(
+            &name,
+            vec![AbiParam::new(from_ty)],
+            vec![AbiParam::new(types::I128)],
+            &[from],
+        )[0];
+    }
+
+    if to_ty == types::I8 || to_ty == types::I16 {
+        // Narrow via i32 non-sat convert then truncate (truncation of undef is undef).
+        let wide = if to_signed {
+            fx.bcx.ins().fcvt_to_sint(types::I32, from)
+        } else {
+            fx.bcx.ins().fcvt_to_uint(types::I32, from)
+        };
+        return fx.bcx.ins().ireduce(to_ty, wide);
+    }
+
+    if to_signed {
+        fx.bcx.ins().fcvt_to_sint(to_ty, from)
+    } else {
+        fx.bcx.ins().fcvt_to_uint(to_ty, from)
+    }
+}
+
+fn clif_int_or_float_cast_inner(
+    fx: &mut FunctionCx<'_, '_, '_>,
+    from: Value,
+    from_signed: bool,
+    to_ty: Type,
+    to_signed: bool,
+    saturate_float_to_int: bool,
+) -> Value {
     let from_ty = fx.bcx.func.dfg.value_type(from);
 
     // FIXME(bytecodealliance/wasmtime#8312): Remove in favour of native
@@ -90,6 +160,10 @@ pub(crate) fn clif_int_or_float_cast(
             fx.bcx.ins().fcvt_from_uint(to_ty, from)
         }
     } else if from_ty.is_float() && to_ty.is_int() {
+        if !saturate_float_to_int {
+            return clif_float_to_int_unchecked(fx, from, to_ty, to_signed);
+        }
+
         let val = if to_ty == types::I128 {
             // _____sssf___
             // __fix   sfti: f32 -> i128
