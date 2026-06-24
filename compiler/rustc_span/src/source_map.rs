@@ -1005,7 +1005,7 @@ impl SourceMap {
         let source_len = local_begin.sf.normalized_source_len.to_usize();
         debug!("source_len=`{:?}`", source_len);
         // Ensure indexes are also not malformed.
-        if start_index > end_index || end_index > source_len - 1 {
+        if start_index > end_index || end_index >= source_len {
             debug!("source indexes are malformed");
             return 1;
         }
