@@ -206,8 +206,9 @@ impl Process {
                 x if x == ZX_ERR_TIMED_OUT => {
                     return Ok(None);
                 }
-                _ => {
-                    panic!("Failed to wait on process handle: {status}");
+                other => {
+                    // Match `wait()`: propagate OS errors instead of aborting the process.
+                    zx_cvt(other)?;
                 }
             }
             zx_cvt(zx_object_get_info(
