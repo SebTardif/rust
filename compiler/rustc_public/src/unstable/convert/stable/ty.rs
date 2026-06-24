@@ -465,8 +465,12 @@ impl<'tcx> Stable<'tcx> for ty::TyKind<'tcx> {
             ty::FnPtr(sig_tys, hdr) => {
                 TyKind::RigidTy(RigidTy::FnPtr(sig_tys.with(*hdr).stable(tables, cx)))
             }
-            // FIXME(unsafe_binders):
-            ty::UnsafeBinder(_) => todo!(),
+            // Represent unsafe binders by their inner type with regions erased,
+            // matching other ty queries; full binder structure is not in RigidTy yet.
+            ty::UnsafeBinder(bound_ty) => {
+                let inner = cx.tcx.instantiate_bound_regions_with_erased((*bound_ty).into());
+                inner.stable(tables, cx)
+            }
             ty::Dynamic(existential_predicates, region) => TyKind::RigidTy(RigidTy::Dynamic(
                 existential_predicates
                     .iter()
@@ -478,7 +482,12 @@ impl<'tcx> Stable<'tcx> for ty::TyKind<'tcx> {
                 tables.closure_def(*def_id),
                 generic_args.stable(tables, cx),
             )),
-            ty::CoroutineClosure(..) => todo!("FIXME(async_closures): Lower these to SMIR"),
+            ty::CoroutineClosure(def_id, generic_args) => {
+                TyKind::RigidTy(RigidTy::CoroutineClosure(
+                    tables.coroutine_closure_def(*def_id),
+                    generic_args.stable(tables, cx),
+                ))
+            }
             ty::Coroutine(def_id, generic_args) => TyKind::RigidTy(RigidTy::Coroutine(
                 tables.coroutine_def(*def_id),
                 generic_args.stable(tables, cx),
