@@ -2757,7 +2757,9 @@ pub fn run_cargo(
             let filename = filename.file_name().unwrap().to_str().unwrap();
             let mut parts = filename.splitn(2, '.');
             let file_stem = parts.next().unwrap().to_owned();
-            let extension = parts.next().unwrap().to_owned();
+            let extension = parts.next().unwrap_or_else(|| {
+                panic!("Cargo output artifact `{filename}` has no file extension");
+            }).to_owned();
 
             toplevel.push((file_stem, extension, expected_len));
         }
