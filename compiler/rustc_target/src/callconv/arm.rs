@@ -19,7 +19,9 @@ where
         let valid_unit = match unit.kind {
             RegKind::Integer => false,
             RegKind::Float => true,
-            RegKind::Vector { .. } => size.bits() == 64 || size.bits() == 128,
+            // AAPCS: HVA element size must be 64 or 128 bits (the unit), not the
+            // total aggregate size (which may be 2-4 vectors).
+            RegKind::Vector { .. } => unit.size.bits() == 64 || unit.size.bits() == 128,
         };
 
         valid_unit.then_some(Uniform::consecutive(unit, size))
