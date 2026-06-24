@@ -2920,7 +2920,7 @@ pub fn strip_debug(builder: &Builder<'_>, target: TargetSelection, path: &Path) 
     let stamp = BuildStamp::new(path.parent().unwrap())
         .with_prefix(path.file_name().unwrap().to_str().unwrap())
         .with_prefix("strip")
-        .add_stamp(previous_mtime.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos());
+        .add_stamp(previous_mtime.duration_since(SystemTime::UNIX_EPOCH).unwrap_or_default().as_nanos());
 
     // Running strip can be relatively expensive (~1s on librustc_driver.so), so we don't rerun it
     // if the file is unchanged.
