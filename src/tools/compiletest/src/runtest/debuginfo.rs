@@ -192,7 +192,10 @@ impl TestCx<'_> {
             let mut line = String::new();
             loop {
                 line.clear();
-                stdout.read_line(&mut line).unwrap();
+                let bytes_read = stdout.read_line(&mut line).unwrap();
+                if bytes_read == 0 {
+                    panic!("adb gdbserver exited before printing 'Listening on port 5039'");
+                }
                 if line.starts_with("Listening on port 5039") {
                     break;
                 }
