@@ -869,6 +869,9 @@ fn make_command_line(argv0: &OsStr, args: &[Arg], force_quotes: bool) -> io::Res
     // the child process parses its arguments.
     // Note that quotes aren't escaped here because they can't be used in arg0.
     // But that's ok because file paths can't contain quotes.
+    // Reject interior NULs: the program name is copied into the wide command
+    // line as-is; an embedded 0 would truncate CreateProcessW / CommandLineToArgvW.
+    let argv0 = ensure_no_nuls(argv0)?;
     cmd.push(b'"' as u16);
     cmd.extend(argv0.encode_wide());
     cmd.push(b'"' as u16);
