@@ -141,6 +141,14 @@ LL |         0.01f128..=6.5f128 => {}
 LL |         1.0f128..=4.0f128 => {}
    |         ^^^^^^^^^^^^^^^^^ no value can reach this
 
-error: aborting due to 15 previous errors
+error: unreachable pattern
+  --> $DIR/floats.rs:80:9
+   |
+LL |         0.01f64..=6.5f64 => {}
+   |         ---------------- matches all the relevant values
+LL |         0.01f64..6.5f64 => {}
+   |         ^^^^^^^^^^^^^^^ no value can reach this
+
+error: aborting due to 16 previous errors
 
 For more information about this error, try `rustc --explain E0004`.

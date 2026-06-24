@@ -72,4 +72,12 @@ fn main() {
         6.5f128 => {} // this is reachable
         _ => {}
     };
+
+    // Regression test: exclusive range [a, b) is covered by inclusive range [a, b],
+    // so a pattern matching [a, b) after [a, b] is unreachable.
+    match 1.0f64 {
+        0.01f64..=6.5f64 => {}
+        0.01f64..6.5f64 => {} //~ ERROR unreachable pattern
+        _ => {}
+    };
 }
