@@ -199,8 +199,12 @@ impl<'a> Parser<'a> {
             return Ok(MappingKind::Code(term));
         }
 
-        assert_eq!(raw_mapping_kind & 0b11, 0);
-        assert_ne!(raw_mapping_kind, 0);
+        if raw_mapping_kind & 0b11 != 0 {
+            return Err(anyhow!("unexpected low bits in mapping kind: {raw_mapping_kind:#x}"));
+        }
+        if raw_mapping_kind == 0 {
+            return Err(anyhow!("mapping kind is zero but was not decoded as a code mapping"));
+        }
 
         let (high, is_expansion) = (raw_mapping_kind >> 3, raw_mapping_kind & 0b100 != 0);
         if is_expansion {
