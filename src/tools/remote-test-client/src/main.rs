@@ -271,7 +271,7 @@ fn push(path: &Path) {
 
     // Wait for an acknowledgement that all the data was received. No idea
     // why this is necessary, seems like it shouldn't be!
-    let mut client = client.into_inner().unwrap();
+    let mut client = t!(client.into_inner().map_err(|e| e.into_error()));
     let mut buf = [0; 4];
     t!(client.read_exact(&mut buf));
     assert_eq!(&buf, b"ack ");
