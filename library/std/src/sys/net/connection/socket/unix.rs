@@ -616,7 +616,7 @@ impl Socket {
         let option = libc::SO_USER_COOKIE;
         #[cfg(target_os = "openbsd")]
         let option = libc::SO_RTABLE;
-        unsafe { setsockopt(self, libc::SOL_SOCKET, option, mark as libc::c_int) }
+        unsafe { setsockopt(self, libc::SOL_SOCKET, option, mark) }
     }
 
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
