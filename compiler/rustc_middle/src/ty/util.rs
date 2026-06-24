@@ -366,6 +366,11 @@ impl<'tcx> TyCtxt<'tcx> {
                     }
                 }
 
+                (&ty::Pat(a_inner, _), &ty::Pat(b_inner, _)) => {
+                    a = a_inner;
+                    b = b_inner;
+                }
+
                 _ => break,
             }
         }
