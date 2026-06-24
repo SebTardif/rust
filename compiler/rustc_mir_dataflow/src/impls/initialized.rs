@@ -72,12 +72,16 @@ impl<'tcx> MaybePlacesSwitchIntData<'tcx> {
                                 .all_values()
                                 .iter()
                                 .map(|value| {
-                                    loop {
+                                    while i < discriminant_vals.len() {
                                         if discriminant_vals[i] == value.get() {
                                             return VariantIdx::new(i);
                                         }
                                         i += 1;
                                     }
+                                    bug!(
+                                        "SwitchInt value {:?} not found in discriminant list",
+                                        value.get()
+                                    );
                                 })
                                 .collect();
 
