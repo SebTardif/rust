@@ -25,11 +25,12 @@ pub fn env() -> Env {
         let _guard = env_read_lock();
         let mut result = Vec::new();
         if !environ.is_null() {
-            while !(*environ).is_null() {
-                if let Some(key_value) = parse(CStr::from_ptr(*environ).to_bytes()) {
+            let mut cur = environ;
+            while !(*cur).is_null() {
+                if let Some(key_value) = parse(CStr::from_ptr(*cur).to_bytes()) {
                     result.push(key_value);
                 }
-                environ = environ.add(1);
+                cur = cur.add(1);
             }
         }
         return Env::new(result);
