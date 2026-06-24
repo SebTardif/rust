@@ -587,8 +587,14 @@ impl<'tcx> Printer<'tcx> for V0SymbolMangler<'tcx> {
                 })?;
             }
 
-            // FIXME(unsafe_binder):
-            ty::UnsafeBinder(..) => todo!(),
+            // Unsafe binders are transparent for symbol identity: mangle the
+            // inner type with regions erased (same approach as other ty queries
+            // on `UnsafeBinder`). No dedicated v0 letter yet; this avoids ICE
+            // if an unstable unsafe-binder type reaches symbol naming.
+            ty::UnsafeBinder(bound_ty) => {
+                let inner = self.tcx.instantiate_bound_regions_with_erased((*bound_ty).into());
+                inner.print(self)?;
+            }
 
             ty::Dynamic(predicates, r) => {
                 self.push("D");
