@@ -46,6 +46,19 @@ fn test_always_abort() {
     should_have_aborted();
 }
 
+fn test_always_abort_resume_unwind() {
+    // Catch a panic before always_abort is set.
+    let payload = panic::catch_unwind(|| {
+        panic!("caught this");
+    })
+    .unwrap_err();
+    // Now enable always_abort.
+    panic::always_abort();
+    // resume_unwind must detect always_abort and abort, not continue unwinding.
+    panic::resume_unwind(payload);
+    should_have_aborted();
+}
+
 fn test_always_abort_thread() {
     let barrier = Arc::new(Barrier::new(2));
     let thr = {
@@ -65,6 +78,7 @@ fn main() {
     let tests: &[(_, fn())] = &[
         ("test", test),
         ("test_always_abort", test_always_abort),
+        ("test_always_abort_resume_unwind", test_always_abort_resume_unwind),
         ("test_always_abort_thread", test_always_abort_thread),
     ];
 

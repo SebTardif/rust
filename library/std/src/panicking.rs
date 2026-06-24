@@ -843,7 +843,13 @@ fn panic_with_hook(
 /// It just forwards the payload to the panic runtime.
 #[cfg_attr(panic = "immediate-abort", inline)]
 pub fn resume_unwind(payload: Box<dyn Any + Send>) -> ! {
-    panic_count::increase(false);
+    if let Some(must_abort) = panic_count::increase(false) {
+        match must_abort {
+            panic_count::MustAbort::PanicInHook | panic_count::MustAbort::AlwaysAbort => {
+                crate::process::abort();
+            }
+        }
+    }
 
     struct RewrapBox(Box<dyn Any + Send>);
 
