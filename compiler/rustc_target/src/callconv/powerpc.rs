@@ -1,6 +1,6 @@
-use rustc_abi::TyAbiInterface;
+use rustc_abi::{HasDataLayout, TyAbiInterface};
 
-use crate::callconv::{ArgAbi, FnAbi};
+use crate::callconv::{ArgAbi, FnAbi, Reg};
 use crate::spec::{Env, HasTargetSpec, Os};
 
 fn classify_ret<Ty>(ret: &mut ArgAbi<'_, Ty>) {
@@ -11,9 +11,10 @@ fn classify_ret<Ty>(ret: &mut ArgAbi<'_, Ty>) {
     }
 }
 
-fn classify_arg<'a, Ty, C: HasTargetSpec>(cx: &C, arg: &mut ArgAbi<'a, Ty>)
+fn classify_arg<'a, Ty, C>(cx: &C, arg: &mut ArgAbi<'a, Ty>)
 where
     Ty: TyAbiInterface<'a, C> + Copy,
+    C: HasDataLayout + HasTargetSpec,
 {
     if arg.is_ignore() {
         // powerpc-unknown-linux-{gnu,musl,uclibc} doesn't ignore ZSTs.
@@ -25,8 +26,20 @@ where
         }
         return;
     }
-    if arg.layout.pass_indirectly_in_non_rustic_abis(cx) || arg.layout.is_aggregate() {
+    if arg.layout.pass_indirectly_in_non_rustic_abis(cx) {
         arg.make_indirect();
+        return;
+    }
+    if arg.layout.is_aggregate() {
+        // PPC32 SVR4 ABI: small aggregates (<= 8 bytes) are passed
+        // by value in GPRs, coerced to integer types.
+        match arg.layout.size.bytes() {
+            1 => arg.cast_to(Reg::i8()),
+            2 => arg.cast_to(Reg::i16()),
+            3..=4 => arg.cast_to(Reg::i32()),
+            5..=8 => arg.cast_to(Reg::i64()),
+            _ => arg.make_indirect(),
+        }
     } else {
         arg.extend_integer_width_to(32);
     }
