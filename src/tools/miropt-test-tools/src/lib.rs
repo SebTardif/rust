@@ -84,7 +84,12 @@ pub fn files_for_miropt_test(
                 assert!(test_names.next().is_none(), "two mir pass names specified for MIR diff");
                 to_file = Some(test_against);
             } else if let Some(first_pass) = test_names.next() {
-                let second_pass = test_names.next().unwrap();
+                let second_pass = test_names.next().unwrap_or_else(|| {
+                    panic!(
+                        "in {}: EMIT_MIR directive has one pass name but expected two: {l}",
+                        testfile.display()
+                    )
+                });
                 if let Some((first_pass_name, _)) = first_pass.split_once('.') {
                     passes.push(first_pass_name.to_owned());
                 }
