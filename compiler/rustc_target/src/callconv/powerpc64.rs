@@ -36,7 +36,8 @@ where
         let valid_unit = match unit.kind {
             RegKind::Integer => false,
             RegKind::Float => true,
-            RegKind::Vector { .. } => arg.layout.size.bits() == 128,
+            // ELFv2/AIX: HVA element size must be 128 bits (the unit), not total size.
+            RegKind::Vector { .. } => unit.size.bits() == 128,
         };
 
         valid_unit.then_some(Uniform::consecutive(unit, arg.layout.size))
