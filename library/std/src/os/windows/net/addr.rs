@@ -18,6 +18,14 @@ pub fn sockaddr_un(path: &Path) -> io::Result<(SOCKADDR_UN, usize)> {
         .to_str()
         .ok_or(io::const_error!(io::ErrorKind::InvalidInput, "path must be valid UTF-8"))?
         .as_bytes();
+    // Match Unix sockaddr_un and public docs: interior NULs would truncate the
+    // effective pathname while `len` still reflected the full byte count.
+    if bytes.contains(&0) {
+        return Err(io::const_error!(
+            io::ErrorKind::InvalidInput,
+            "paths must not contain interior null bytes",
+        ));
+    }
     if bytes.len() >= addr.sun_path.len() {
         return Err(io::const_error!(io::ErrorKind::InvalidInput, "path too long"));
     }
