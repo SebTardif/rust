@@ -70,8 +70,14 @@ impl Condvar {
 
         // Wait until `waiter` is removed from the queue
         loop {
-            // Park the current task
-            expect_success_aborting(unsafe { abi::slp_tsk() }, &"slp_tsk");
+            // Park the current task. E_RLWAI (forced release from waiting) is
+            // normal on ITRON; thread_parking accepts it, condvar must too.
+            match unsafe { abi::slp_tsk() } {
+                abi::E_OK | abi::E_RLWAI => {}
+                err => {
+                    expect_success_aborting(err, &"slp_tsk");
+                }
+            }
 
             if !self.waiters.with_locked(|waiters| unsafe { waiters.is_queued(waiter) }) {
                 break;
@@ -105,7 +111,9 @@ impl Condvar {
             }
             er
         }) {
-            abi::E_TMOUT => {}
+            // Mirror thread_parking::park_timeout: OK, forced-release, and timeout
+            // are all non-fatal; only unexpected error codes abort.
+            abi::E_OK | abi::E_RLWAI | abi::E_TMOUT => {}
             er => {
                 expect_success_aborting(er, &"tslp_tsk");
             }
