@@ -77,10 +77,18 @@ impl Thread {
 }
 
 pub fn available_parallelism() -> io::Result<NonZero<usize>> {
+    // `GetSystemInfo` only reports processors in the current processor group
+    // (at most 64 on Windows). Sum across all groups for machines with more
+    // than 64 logical processors.
     let res = unsafe {
-        let mut sysinfo: c::SYSTEM_INFO = crate::mem::zeroed();
-        c::GetSystemInfo(&mut sysinfo);
-        sysinfo.dwNumberOfProcessors as usize
+        let all_groups = c::GetActiveProcessorCount(c::ALL_PROCESSOR_GROUPS);
+        if all_groups != 0 {
+            all_groups as usize
+        } else {
+            let mut sysinfo: c::SYSTEM_INFO = crate::mem::zeroed();
+            c::GetSystemInfo(&mut sysinfo);
+            sysinfo.dwNumberOfProcessors as usize
+        }
     };
     match res {
         0 => Err(io::Error::UNKNOWN_THREAD_COUNT),
