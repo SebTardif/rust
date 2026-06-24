@@ -150,6 +150,11 @@ impl<'tcx> TypeFolder<TyCtxt<'tcx>> for ReverseMapper<'tcx> {
                 Ty::new_closure(self.tcx, def_id, args)
             }
 
+            ty::CoroutineClosure(def_id, args) => {
+                let args = self.fold_closure_args(def_id, args);
+                Ty::new_coroutine_closure(self.tcx, def_id, args)
+            }
+
             ty::Coroutine(def_id, args) => {
                 let args = self.fold_closure_args(def_id, args);
                 Ty::new_coroutine(self.tcx, def_id, args)
@@ -214,7 +219,9 @@ impl<'tcx> TypeFolder<TyCtxt<'tcx>> for ReverseMapper<'tcx> {
                 }
             }
 
-            _ => ct,
+            // Fold through unevaluated/expr consts so nested type/region/param
+            // references inside the const are remapped too.
+            _ => ct.super_fold_with(self),
         }
     }
 }
