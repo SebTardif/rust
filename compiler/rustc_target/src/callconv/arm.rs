@@ -93,7 +93,12 @@ where
 {
     // If this is a target with a hard-float ABI, and the function is not explicitly
     // `extern "aapcs"`, then we must use the VFP registers for homogeneous aggregates.
-    let vfp = cx.target_spec().llvm_target.ends_with("hf")
+    // Use llvm_floatabi instead of checking the LLVM triple suffix, because some
+    // hard-float targets (e.g., Apple ARM) don't have "hf" in their triple.
+    let vfp = cx
+        .target_spec()
+        .llvm_floatabi
+        .is_some_and(|abi| abi == crate::spec::FloatAbi::Hard)
         && fn_abi.conv != CanonAbi::Arm(ArmCall::Aapcs)
         && !fn_abi.c_variadic;
 
