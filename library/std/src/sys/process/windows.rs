@@ -696,11 +696,17 @@ impl Process {
         if result == c::FALSE {
             let error = api::get_last_error();
             // TerminateProcess returns ERROR_ACCESS_DENIED if the process has already been
-            // terminated (by us, or for any other reason). So check if the process was actually
-            // terminated, and if so, do not return an error.
-            if error != WinError::ACCESS_DENIED || self.try_wait().is_err() {
-                return Err(crate::io::Error::from_raw_os_error(error.code as i32));
+            // terminated (by us, or for any other reason). Only treat that as success when
+            // the process has actually exited. ACCESS_DENIED while still running (insufficient
+            // rights / wrong integrity level) must surface as an error, not Ok(()).
+            if error == WinError::ACCESS_DENIED {
+                match self.try_wait() {
+                    Ok(Some(_)) => return Ok(()),
+                    Ok(None) => {}
+                    Err(e) => return Err(e),
+                }
             }
+            return Err(crate::io::Error::from_raw_os_error(error.code as i32));
         }
         Ok(())
     }
