@@ -106,7 +106,8 @@ impl FilePermissions {
     }
 
     pub fn set_readonly(&mut self, _readonly: bool) {
-        panic!("Permissions do not exist")
+        // No-op: VEXos does not support file permissions.
+        // set_perm will return Unsupported at the I/O boundary.
     }
 }
 
