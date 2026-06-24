@@ -89,7 +89,11 @@ where
         }
 
         let v = path.as_ref().encode_wide().collect::<Vec<u16>>();
-        if v.contains(&PATHS_SEP) {
+        // Interior NULs would truncate when the joined string is later treated
+        // as a C-style wide string (e.g. the UEFI Shell Path variable).
+        if v.contains(&0) {
+            return Err(JoinPathsError);
+        } else if v.contains(&PATHS_SEP) {
             return Err(JoinPathsError);
         }
 
@@ -101,7 +105,7 @@ where
 
 impl fmt::Display for JoinPathsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        "path segment contains `;`".fmt(f)
+        "path segment contains `;` or interior NUL".fmt(f)
     }
 }
 
