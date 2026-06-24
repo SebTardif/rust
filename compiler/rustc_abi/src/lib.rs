@@ -1131,6 +1131,10 @@ impl Align {
     /// Note that all numbers are factors of 0
     #[inline]
     pub fn max_aligned_factor(size: Size) -> Align {
+        if size.bytes() == 0 {
+            // All alignments are factors of 0, so return the maximum.
+            return Align::MAX;
+        }
         Align { pow2: size.bytes().trailing_zeros() as u8 }
     }
 
