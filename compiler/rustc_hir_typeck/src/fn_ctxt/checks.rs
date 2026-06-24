@@ -1398,6 +1398,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 }
                 ty::Alias(ty::AliasTy { kind: ty::Opaque { def_id: new_def_id }, .. })
                 | ty::Closure(new_def_id, _)
+                | ty::CoroutineClosure(new_def_id, _)
                 | ty::FnDef(new_def_id, _) => {
                     def_id = new_def_id;
                 }
@@ -1625,7 +1626,8 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 for (rcvr, args) in call_finder.calls {
                     if rcvr.hir_id.owner == typeck.hir_owner
                         && let Some(rcvr_ty) = typeck.node_type_opt(rcvr.hir_id)
-                        && let ty::Closure(call_def_id, _) = rcvr_ty.kind()
+                        && let ty::Closure(call_def_id, _)
+                            | ty::CoroutineClosure(call_def_id, _) = rcvr_ty.kind()
                         && def_id == *call_def_id
                         && let Some(idx) = expected_idx
                         && let Some(arg) = args.get(idx)
