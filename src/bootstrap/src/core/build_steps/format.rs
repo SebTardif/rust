@@ -51,7 +51,7 @@ fn rustfmt(
         } else {
             cmd.wait()
         };
-        if status.unwrap().success() { RustfmtStatus::Ok } else { RustfmtStatus::Failed }
+        if status.is_ok_and(|s| s.success()) { RustfmtStatus::Ok } else { RustfmtStatus::Failed }
     }
 }
 
