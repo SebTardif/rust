@@ -220,8 +220,8 @@ impl TestCx<'_> {
 
             debugger_run_result = ProcRes {
                 status,
-                stdout: String::from_utf8(stdout).unwrap(),
-                stderr: String::from_utf8(stderr).unwrap(),
+                stdout: String::from_utf8_lossy(&stdout).into_owned(),
+                stderr: String::from_utf8_lossy(&stderr).into_owned(),
                 truncated: Truncated::No,
                 cmdline,
             };
