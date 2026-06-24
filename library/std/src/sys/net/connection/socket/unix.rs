@@ -127,7 +127,23 @@ impl Socket {
                 ) => {
                     // Like above, set cloexec atomically
                     cvt(libc::socketpair(fam, ty | libc::SOCK_CLOEXEC, 0, fds.as_mut_ptr()))?;
-                    Ok((Socket(FileDesc::from_raw_fd(fds[0])), Socket(FileDesc::from_raw_fd(fds[1]))))
+                    let a = Socket(FileDesc::from_raw_fd(fds[0]));
+                    let b = Socket(FileDesc::from_raw_fd(fds[1]));
+
+                    // Set SO_NOSIGPIPE on platforms that use it (Apple, BSDs).
+                    // Socket::new() sets this, but socketpair() creates sockets
+                    // that bypass new(), so they need it explicitly.
+                    #[cfg(any(
+                        target_os = "freebsd",
+                        target_os = "netbsd",
+                        target_os = "dragonfly",
+                    ))]
+                    {
+                        setsockopt(&a, libc::SOL_SOCKET, libc::SO_NOSIGPIPE, 1)?;
+                        setsockopt(&b, libc::SOL_SOCKET, libc::SO_NOSIGPIPE, 1)?;
+                    }
+
+                    Ok((a, b))
                 }
                 _ => {
                     cvt(libc::socketpair(fam, ty, 0, fds.as_mut_ptr()))?;
@@ -135,7 +151,19 @@ impl Socket {
                     let b = FileDesc::from_raw_fd(fds[1]);
                     a.set_cloexec()?;
                     b.set_cloexec()?;
-                    Ok((Socket(a), Socket(b)))
+                    let a = Socket(a);
+                    let b = Socket(b);
+
+                    // Set SO_NOSIGPIPE on platforms that use it (Apple).
+                    // Socket::new() sets this, but socketpair() creates sockets
+                    // that bypass new(), so they need it explicitly.
+                    #[cfg(target_vendor = "apple")]
+                    {
+                        setsockopt(&a, libc::SOL_SOCKET, libc::SO_NOSIGPIPE, 1)?;
+                        setsockopt(&b, libc::SOL_SOCKET, libc::SO_NOSIGPIPE, 1)?;
+                    }
+
+                    Ok((a, b))
                 }
             }
         }
@@ -257,7 +285,15 @@ impl Socket {
             ) => {
                 unsafe {
                     let fd = cvt_r(|| libc::accept4(self.as_raw_fd(), storage, len, libc::SOCK_CLOEXEC))?;
-                    Ok(Socket(FileDesc::from_raw_fd(fd)))
+                    let socket = Socket(FileDesc::from_raw_fd(fd));
+
+                    // Set SO_NOSIGPIPE on platforms that use it.
+                    // Socket::new() sets this, but accept() creates sockets
+                    // that bypass new(), so they need it explicitly.
+                    #[cfg(any(target_os = "freebsd", target_os = "netbsd", target_os = "dragonfly"))]
+                    setsockopt(&socket, libc::SOL_SOCKET, libc::SO_NOSIGPIPE, 1)?;
+
+                    Ok(socket)
                 }
             }
             _ => {
@@ -265,7 +301,15 @@ impl Socket {
                     let fd = cvt_r(|| libc::accept(self.as_raw_fd(), storage, len))?;
                     let fd = FileDesc::from_raw_fd(fd);
                     fd.set_cloexec()?;
-                    Ok(Socket(fd))
+                    let socket = Socket(fd);
+
+                    // Set SO_NOSIGPIPE on platforms that use it.
+                    // Socket::new() sets this, but accept() creates sockets
+                    // that bypass new(), so they need it explicitly.
+                    #[cfg(target_vendor = "apple")]
+                    setsockopt(&socket, libc::SOL_SOCKET, libc::SO_NOSIGPIPE, 1)?;
+
+                    Ok(socket)
                 }
             }
         }
