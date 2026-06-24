@@ -65,6 +65,7 @@ impl SpanUtils for SnippetProvider {
             offset += additional_offset + needle.len();
         }
 
+        assert!(offset > 0, "needle not found in span");
         original.lo() + BytePos(offset as u32 - 1)
     }
 
