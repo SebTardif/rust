@@ -186,9 +186,9 @@ pub(crate) fn expand(
                     '+' | '-' | '/' | '*' | '^' | '&' | '|' | 'm' => {
                         match (stack.pop(), stack.pop()) {
                             (Some(Number(y)), Some(Number(x))) => stack.push(Number(match cur {
-                                '+' => x + y,
-                                '-' => x - y,
-                                '*' => x * y,
+                                '+' => x.wrapping_add(y),
+                                '-' => x.wrapping_sub(y),
+                                '*' => x.wrapping_mul(y),
                                 '/' => x / y,
                                 '|' => x | y,
                                 '&' => x & y,
