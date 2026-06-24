@@ -842,11 +842,13 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
 
             ty::Array(inner_ty, _) => {
                 if state.is_in_function()
-                    // FIXME(ctypes): VVV-this-VVV shouldn't make a difference between ::None and ::NoneThroughFnPtr
-                    && matches!(state.outer_ty_kind, OuterTyKind::None)
+                    && matches!(
+                        state.outer_ty_kind,
+                        OuterTyKind::None | OuterTyKind::NoneThroughFnPtr
+                    )
                 {
                     // C doesn't really support passing arrays by value - the only way to pass an array by value
-                    // is through a struct.
+                    // is through a struct. Includes arrays in `extern "C" fn([T; N])` signatures.
                     FfiResult::FfiUnsafe {
                         ty,
                         reason: msg!("passing raw arrays by value is not FFI-safe"),
