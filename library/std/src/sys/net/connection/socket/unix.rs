@@ -495,7 +495,7 @@ impl Socket {
     #[cfg(target_os = "linux")]
     pub fn deferaccept(&self) -> io::Result<Duration> {
         let raw: c_int = unsafe { getsockopt(self, libc::IPPROTO_TCP, libc::TCP_DEFER_ACCEPT)? };
-        Ok(Duration::from_secs(raw as _))
+        Ok(Duration::from_secs(raw.max(0) as u64))
     }
 
     #[cfg(any(target_os = "freebsd", target_os = "netbsd"))]
