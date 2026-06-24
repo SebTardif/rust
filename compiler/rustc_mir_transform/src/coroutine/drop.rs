@@ -5,6 +5,7 @@ use super::*;
 // Fix return Poll<Rv>::Pending statement into Poll<()>::Pending for async drop function
 struct FixReturnPendingVisitor<'tcx> {
     tcx: TyCtxt<'tcx>,
+    poll_pending_variant: VariantIdx,
 }
 
 impl<'tcx> MutVisitor<'tcx> for FixReturnPendingVisitor<'tcx> {
@@ -22,9 +23,12 @@ impl<'tcx> MutVisitor<'tcx> for FixReturnPendingVisitor<'tcx> {
             return;
         }
 
-        // Converting `_0 = Poll::<Rv>::Pending` to `_0 = Poll::<()>::Pending`
-        if let Rvalue::Aggregate(kind, _) = rvalue
-            && let AggregateKind::Adt(_, _, ref mut args, _, _) = **kind
+        // Converting `_0 = Poll::<Rv>::Pending` to `_0 = Poll::<()>::Pending` only.
+        // Do not rewrite `Poll::Ready(_)` aggregates on the return place.
+        if let Rvalue::Aggregate(kind, fields) = rvalue
+            && let AggregateKind::Adt(_, variant_idx, ref mut args, _, _) = **kind
+            && variant_idx == self.poll_pending_variant
+            && fields.is_empty()
         {
             *args = self.tcx.mk_args(&[self.tcx.types.unit.into()]);
         }
@@ -38,26 +42,43 @@ impl<'tcx> MutVisitor<'tcx> for FixReturnPendingVisitor<'tcx> {
 pub(super) fn has_async_drops<'tcx>(body: &mut Body<'tcx>) -> bool {
     let mut has_async_drops = false;
 
+    // Seed dropline with every Yield's `drop` target first, then propagate to
+    // fixpoint. A single RPO pass can miss successors when a drop target is
+    // reachable via another edge visited before its seeding yield.
     let mut dropline: DenseBitSet<BasicBlock> = DenseBitSet::new_empty(body.basic_blocks.len());
-    for (bb, data) in traversal::reverse_postorder(body) {
-        // Cleanup edges are not async drops.
+    for data in body.basic_blocks.iter() {
         if data.is_cleanup {
             continue;
         }
+        if let TerminatorKind::Yield { drop: Some(v), .. } = data.terminator().kind {
+            dropline.insert(v);
+        }
+    }
 
-        if let TerminatorKind::Yield { drop, .. } = data.terminator().kind {
-            if dropline.contains(bb) {
-                has_async_drops = true
+    let mut changed = true;
+    while changed {
+        changed = false;
+        for (bb, data) in body.basic_blocks.iter_enumerated() {
+            if data.is_cleanup || !dropline.contains(bb) {
+                continue;
             }
-            if let Some(v) = drop {
-                dropline.insert(v);
+            for succ in data.terminator().successors() {
+                if dropline.insert(succ) {
+                    changed = true;
+                }
             }
         }
+    }
 
-        if dropline.contains(bb) {
-            data.terminator().successors().for_each(|v| {
-                dropline.insert(v);
-            });
+    for (bb, data) in body.basic_blocks.iter_enumerated() {
+        if data.is_cleanup {
+            continue;
+        }
+        if let TerminatorKind::Yield { .. } = data.terminator().kind
+            && dropline.contains(bb)
+        {
+            has_async_drops = true;
+            break;
         }
     }
 
@@ -240,7 +261,10 @@ pub(super) fn create_coroutine_drop_shim_async<'tcx>(
     // not a coroutine body itself; it just has its drop built out of it.
     let _ = body.coroutine.take();
 
-    FixReturnPendingVisitor { tcx }.visit_body(&mut body);
+    let poll_pending_variant = tcx
+        .adt_def(tcx.require_lang_item(LangItem::Poll, body.span))
+        .variant_index_with_id(tcx.require_lang_item(LangItem::PollPending, body.span));
+    FixReturnPendingVisitor { tcx, poll_pending_variant }.visit_body(&mut body);
 
     // Poison the coroutine when it unwinds
     if can_unwind {
