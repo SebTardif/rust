@@ -69,7 +69,12 @@ where
     T: IsMinusOne,
     F: FnMut() -> T,
 {
-    cvt(f())
+    loop {
+        match cvt(f()) {
+            Err(ref e) if e.kind() == ErrorKind::Interrupted => {}
+            other => return other,
+        }
+    }
 }
 
 /// Returns the last error from the network subsystem.
