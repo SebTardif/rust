@@ -2058,7 +2058,13 @@ fn load_toml_config(
     // but not if `bootstrap.toml` hasn't been created.
     if !using_default_path || toml_path.exists() {
         let path = Some(if cfg!(not(test)) {
-            toml_path = toml_path.canonicalize().unwrap();
+            toml_path = toml_path.canonicalize().unwrap_or_else(|e| {
+                eprintln!(
+                    "ERROR: failed to canonicalize config path `{}`: {e}",
+                    toml_path.display()
+                );
+                std::process::exit(2);
+            });
             toml_path.clone()
         } else {
             toml_path.clone()
