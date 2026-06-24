@@ -274,7 +274,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
 
             let ty = used_place.ty(self.body, self.infcx.tcx).ty;
             let needs_note = match ty.kind() {
-                ty::Closure(id, _) => {
+                ty::Closure(id, _) | ty::CoroutineClosure(id, _) => {
                     self.infcx.tcx.closure_kind_origin(id.expect_local()).is_none()
                 }
                 _ => true,
