@@ -383,6 +383,7 @@ impl DocTestBuilder {
             // rustdoc implicitly inserts an `extern crate` item for the own crate
             // which may be unused, so we need to allow the lint.
             crate_level_code.push_str("#[allow(unused_extern_crates)]\n");
+            line_offset += 1;
 
             crate_level_code.push_str(&format!("extern crate r#{crate_name};\n"));
             line_offset += 1;
