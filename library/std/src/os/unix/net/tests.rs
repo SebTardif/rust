@@ -816,3 +816,29 @@ fn test_send_vectored_with_ancillary_unix_datagram() {
         unreachable!("must be ScmRights");
     }
 }
+
+/// Regression test: UnixDatagram::send() must use MSG_NOSIGNAL to avoid
+/// SIGPIPE killing the process when the peer has closed.
+/// Before the fix, send() called self.0.write(buf) (no MSG_NOSIGNAL),
+/// while send_to() and send_vectored_with_ancillary() did use the flag.
+/// See https://github.com/SebTardif/rust/issues/431
+#[test]
+#[cfg_attr(target_os = "android", ignore)] // Android SELinux rules prevent creating Unix sockets
+fn test_datagram_send_no_sigpipe() {
+    let dir = tmpdir();
+    let socket_path = dir.path().join("dgram_nosignal.sock");
+
+    let receiver = or_panic!(UnixDatagram::bind(&socket_path));
+    let sender = or_panic!(UnixDatagram::unbound());
+    or_panic!(sender.connect(&socket_path));
+
+    // Drop the receiver so the peer socket is closed.
+    drop(receiver);
+    // Also remove the path so the send has nowhere to deliver.
+    let _ = std::fs::remove_file(&socket_path);
+
+    // Without MSG_NOSIGNAL, this would raise SIGPIPE and kill the process.
+    // With the fix, it returns an error (ConnectionRefused or similar).
+    let result = sender.send(b"hello");
+    assert!(result.is_err(), "send to closed peer should return Err, not SIGPIPE");
+}

@@ -585,7 +585,7 @@ impl UnixDatagram {
     /// ```
     #[stable(feature = "unix_socket", since = "1.10.0")]
     pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        self.0.write(buf)
+        self.0.send_with_flags(buf, MSG_NOSIGNAL)
     }
 
     /// Sends data and ancillary data on the socket to the specified address.
