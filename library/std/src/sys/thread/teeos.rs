@@ -112,8 +112,17 @@ pub fn yield_now() {
 
 /// only main thread could wait for sometime in teeos
 pub fn sleep(dur: Duration) {
-    let sleep_millis = dur.as_millis();
-    let final_sleep: u32 =
-        if sleep_millis >= u32::MAX as u128 { u32::MAX } else { sleep_millis as u32 };
-    TEE_Wait(final_sleep);
+    // TEE_Wait takes milliseconds. Loop for durations that exceed u32::MAX ms
+    // (issue #342) and clamp nonzero sub-millisecond sleeps up to 1 ms so they
+    // are not silently treated as zero (TEE_Wait(0) returns immediately).
+    let mut remaining_ms = dur.as_millis();
+    if dur > Duration::ZERO && remaining_ms == 0 {
+        remaining_ms = 1;
+    }
+    while remaining_ms > 0 {
+        let chunk: u32 =
+            if remaining_ms >= u32::MAX as u128 { u32::MAX } else { remaining_ms as u32 };
+        TEE_Wait(chunk);
+        remaining_ms -= chunk as u128;
+    }
 }
