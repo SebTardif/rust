@@ -105,7 +105,7 @@ pub(crate) fn clif_int_or_float_cast(
                     types::F32 => "s",
                     types::F64 => "d",
                     types::F128 => "t",
-                    _ => unreachable!("{:?}", to_ty),
+                    _ => unreachable!("{:?}", from_ty),
                 },
             );
 
