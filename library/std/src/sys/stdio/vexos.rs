@@ -14,19 +14,31 @@ impl Stdin {
 
 impl io::Read for Stdin {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let mut count = 0;
-
-        for out_byte in buf.iter_mut() {
-            let byte = unsafe { vex_sdk::vexSerialReadChar(STDIO_CHANNEL) };
-            if byte < 0 {
-                break;
-            }
-
-            *out_byte = byte as u8;
-            count += 1;
+        if buf.is_empty() {
+            return Ok(0);
         }
 
-        Ok(count)
+        // Block until at least one byte is available, so we never return
+        // Ok(0) (which signals EOF) when there is simply no data yet.
+        loop {
+            let byte = unsafe { vex_sdk::vexSerialReadChar(STDIO_CHANNEL) };
+            if byte >= 0 {
+                buf[0] = byte as u8;
+                let mut count = 1;
+
+                for out_byte in buf[1..].iter_mut() {
+                    let b = unsafe { vex_sdk::vexSerialReadChar(STDIO_CHANNEL) };
+                    if b < 0 {
+                        break;
+                    }
+                    *out_byte = b as u8;
+                    count += 1;
+                }
+
+                return Ok(count);
+            }
+            unsafe { vex_sdk::vexTasksRun() };
+        }
     }
 }
 
