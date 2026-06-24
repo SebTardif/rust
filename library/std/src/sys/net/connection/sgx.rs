@@ -161,8 +161,8 @@ impl TcpStream {
         sgx_ineffective(None)
     }
 
-    pub fn peek(&self, _: &mut [u8]) -> io::Result<usize> {
-        Ok(0)
+    pub fn peek(&self, _buf: &mut [u8]) -> io::Result<usize> {
+        Err(io::const_error!(io::ErrorKind::Unsupported, "peek is not supported on SGX"))
     }
 
     pub fn read(&self, buf: &mut [u8]) -> io::Result<usize> {
