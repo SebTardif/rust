@@ -47,7 +47,7 @@ fn sort_bindings(file_name: &str) -> Result<(), Box<dyn Error>> {
 
     let mut lines = bindings.split_inclusive('\n');
     for line in &mut lines {
-        f.write(line.as_bytes())?;
+        f.write_all(line.as_bytes())?;
         if line.contains("--filter") {
             break;
         }
@@ -60,7 +60,7 @@ fn sort_bindings(file_name: &str) -> Result<(), Box<dyn Error>> {
     }
     bindings.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
     for line in bindings {
-        f.write(line.as_bytes())?;
+        f.write_all(line.as_bytes())?;
     }
     Ok(())
 }
