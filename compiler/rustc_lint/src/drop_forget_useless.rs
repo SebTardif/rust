@@ -127,11 +127,11 @@ declare_lint! {
     ///
     /// ### Explanation
     ///
-    /// `ManuallyDrop` does not drop it's inner value so calling `std::mem::drop` will
+    /// `ManuallyDrop` does not drop its inner value so calling `std::mem::drop` will
     /// not drop the inner value of the `ManuallyDrop` either.
     pub UNDROPPED_MANUALLY_DROPS,
     Deny,
-    "calls to `std::mem::drop` with `std::mem::ManuallyDrop` instead of it's inner value"
+    "calls to `std::mem::drop` with `std::mem::ManuallyDrop` instead of its inner value"
 }
 
 declare_lint_pass!(DropForgetUseless => [DROPPING_REFERENCES, FORGETTING_REFERENCES, DROPPING_COPY_TYPES, FORGETTING_COPY_TYPES, UNDROPPED_MANUALLY_DROPS]);
