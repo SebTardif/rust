@@ -8,7 +8,7 @@ use crate::os::windows::prelude::*;
 use crate::path::{self, PathBuf};
 #[cfg(not(target_vendor = "uwp"))]
 use crate::sys::pal::api::WinError;
-use crate::sys::pal::{api, c, cvt, fill_utf16_buf, os2path};
+use crate::sys::pal::{api, c, cvt, fill_utf16_buf, os2path, to_u16s};
 use crate::{fmt, io, ptr};
 
 pub struct SplitPaths<'a> {
@@ -104,10 +104,9 @@ pub fn getcwd() -> io::Result<PathBuf> {
 }
 
 pub fn chdir(p: &path::Path) -> io::Result<()> {
-    let p: &OsStr = p.as_ref();
-    let mut p = p.encode_wide().collect::<Vec<_>>();
-    p.push(0);
-
+    // Reject interior NULs (to_u16s) so SetCurrentDirectoryW cannot silently
+    // truncate at the first embedded zero code unit.
+    let p = to_u16s(p)?;
     cvt(unsafe { c::SetCurrentDirectoryW(p.as_ptr()) }).map(drop)
 }
 
