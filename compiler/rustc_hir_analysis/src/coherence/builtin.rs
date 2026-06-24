@@ -11,6 +11,7 @@ use rustc_hir::def_id::{DefId, LocalDefId};
 use rustc_hir::lang_items::LangItem;
 use rustc_infer::infer::{self, InferCtxt, RegionResolutionError, SubregionOrigin, TyCtxtInferExt};
 use rustc_infer::traits::{Obligation, PredicateObligations};
+use rustc_middle::span_bug;
 use rustc_middle::ty::adjustment::CoerceUnsizedInfo;
 use rustc_middle::ty::print::PrintTraitRefExt as _;
 use rustc_middle::ty::relate::solver_relating::RelateExt;
@@ -627,7 +628,7 @@ pub(crate) fn coerce_shared_info<'tcx>(
         span,
         Unnormalized::new_wip(trait_ref.args.type_at(1)),
     ) else {
-        todo!("something went wrong with structurally_normalize_ty");
+        span_bug!(span, "failed to structurally normalize target type for CoerceShared impl");
     };
 
     let param_env = tcx.param_env(impl_did);
