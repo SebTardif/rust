@@ -84,7 +84,7 @@ const NUM_PLANES: u16 = 2;
 /// Split a codepoint into its plane (upper 16 bits) and position within the plane (lower 16 bits).
 fn deconstruct(c: u32) -> (u16, u16) {
     let high = (c >> 16) as u16;
-    assert!(high <= NUM_PLANES);
+    assert!(high < NUM_PLANES, "case mapping in plane {high} not yet supported");
 
     let low = c as u16;
     (high, low)
