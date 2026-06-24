@@ -793,9 +793,14 @@ where
                 Some(tail_ty) => Ty::new_projection(cx, metadata_def_id, [tail_ty]),
             },
 
-            ty::UnsafeBinder(_) => {
-                // FIXME(unsafe_binder): Figure out how to handle pointee for unsafe binders.
-                todo!()
+            // Pointee metadata follows the inner type (regions skipped at this
+            // solver stage), matching other ty queries on `UnsafeBinder`.
+            ty::UnsafeBinder(bound_ty) => {
+                let inner = bound_ty.skip_binder();
+                return Self::consider_builtin_pointee_candidate(
+                    ecx,
+                    goal.with(cx, goal.predicate.with_replaced_self_ty(cx, inner)),
+                );
             }
 
             ty::Infer(ty::TyVar(_) | ty::FreshTy(_) | ty::FreshIntTy(_) | ty::FreshFloatTy(_))
@@ -1001,12 +1006,9 @@ where
             | ty::Slice(_)
             | ty::Dynamic(_, _)
             | ty::Tuple(_)
-            | ty::Error(_) => self_ty.discriminant_ty(ecx.cx()),
-
-            ty::UnsafeBinder(_) => {
-                // FIXME(unsafe_binders): instantiate this with placeholders?? i guess??
-                todo!("discr subgoal...")
-            }
+            | ty::Error(_)
+            // `discriminant_ty` already recurses through `UnsafeBinder` inners.
+            | ty::UnsafeBinder(_) => self_ty.discriminant_ty(ecx.cx()),
 
             // Given an alias, parameter, or placeholder we add an impl candidate normalizing to a rigid
             // alias. In case there's a where-bound further constraining this alias it is preferred over
