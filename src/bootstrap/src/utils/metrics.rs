@@ -170,7 +170,10 @@ impl BuildMetrics {
 
         let system_stats = JsonInvocationSystemStats {
             cpu_threads_count: system.cpus().len(),
-            cpu_model: system.cpus()[0].brand().into(),
+            cpu_model: system
+                .cpus()
+                .first()
+                .map_or("unknown".into(), |c| c.brand().into()),
 
             memory_total_bytes: system.total_memory(),
         };
