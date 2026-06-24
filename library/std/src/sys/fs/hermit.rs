@@ -146,8 +146,8 @@ impl FilePermissions {
         self.mode & 0o222 == 0
     }
 
-    pub fn set_readonly(&mut self, _readonly: bool) {
-        unimplemented!()
+    pub fn set_readonly(&mut self, readonly: bool) {
+        if readonly { self.mode &= !0o222 } else { self.mode |= 0o222 }
     }
 
     #[allow(dead_code)]
