@@ -592,9 +592,11 @@ pub(crate) fn encode_ty<'tcx>(
             typeid.push_str(&s);
         }
 
-        // FIXME(unsafe_binders): Implement this.
-        ty::UnsafeBinder(_) => {
-            todo!()
+        // Unsafe binders are transparent for CFI type identity: encode the inner
+        // type with regions erased (same approach as symbol mangling / ty queries).
+        ty::UnsafeBinder(bound_ty) => {
+            let inner = tcx.instantiate_bound_regions_with_erased((*bound_ty).into());
+            typeid.push_str(&encode_ty(tcx, inner, dict, options));
         }
 
         // Trait types
