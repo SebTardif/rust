@@ -515,7 +515,11 @@ impl File {
     }
 
     pub fn truncate(&self, size: u64) -> io::Result<()> {
-        let info = c::FILE_END_OF_FILE_INFO { EndOfFile: size as i64 };
+        // Windows expects a signed 64-bit EOF; reject sizes that would wrap
+        // (matches Unix `ftruncate` which uses `try_into` for `off_t`).
+        let size: i64 =
+            size.try_into().map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+        let info = c::FILE_END_OF_FILE_INFO { EndOfFile: size };
         api::set_file_information_by_handle(self.handle.as_raw_handle(), &info).io_result()
     }
 
