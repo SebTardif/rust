@@ -152,7 +152,7 @@ pub fn output(command: &mut Command) -> io::Result<(ExitStatus, Vec<u8>, Vec<u8>
 
     // UEFI adds the bin name by default
     if !command.args.is_empty() {
-        let args = uefi_command_internal::create_args(&command.prog, &command.args);
+        let args = uefi_command_internal::create_args(&command.prog, &command.args)?;
         cmd.set_args(args);
     }
 
@@ -872,11 +872,29 @@ mod uefi_command_internal {
         }
     }
 
-    pub fn create_args(prog: &OsStr, args: &[OsString]) -> Box<[u16]> {
+    pub fn create_args(prog: &OsStr, args: &[OsString]) -> io::Result<Box<[u16]>> {
         const QUOTE: u16 = 0x0022;
         const SPACE: u16 = 0x0020;
         const CARET: u16 = 0x005e;
         const NULL: u16 = 0;
+
+        // Interior wide NULs would truncate the UEFI LoadOptions / shell command
+        // line the same way WinAPI C strings do; reject early (see os_string_to_raw).
+        fn ensure_no_interior_nul(s: &OsStr) -> io::Result<()> {
+            if s.encode_wide().any(|c| c == NULL) {
+                Err(io::const_error!(
+                    io::ErrorKind::InvalidInput,
+                    "strings passed to UEFI cannot contain NULs",
+                ))
+            } else {
+                Ok(())
+            }
+        }
+
+        ensure_no_interior_nul(prog)?;
+        for arg in args {
+            ensure_no_interior_nul(arg)?;
+        }
 
         // This is the lower bound on the final length under the assumption that
         // the arguments only contain ASCII characters.
@@ -902,7 +920,7 @@ mod uefi_command_internal {
             res.push(QUOTE);
         }
 
-        res.into_boxed_slice()
+        Ok(res.into_boxed_slice())
     }
 }
 
