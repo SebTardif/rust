@@ -1901,8 +1901,12 @@ pub fn normalize_codegen_backend_name(builder: &Builder<'_>, path: &Path) -> Str
     let filename = path.file_name().unwrap().to_str().unwrap();
     // change e.g. `librustc_codegen_cranelift-xxxxxx.so` to
     // `librustc_codegen_cranelift-release.so`
-    let dash = filename.find('-').unwrap();
-    let dot = filename.find('.').unwrap();
+    let dash = filename.find('-').unwrap_or_else(|| {
+        panic!("codegen backend filename `{filename}` missing expected `-` hash separator")
+    });
+    let dot = filename.find('.').unwrap_or_else(|| {
+        panic!("codegen backend filename `{filename}` missing expected `.` extension separator")
+    });
     format!("{}-{}{}", &filename[..dash], builder.rust_release(), &filename[dot..])
 }
 
