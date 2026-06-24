@@ -203,8 +203,9 @@ pub fn futex_wait(futex: &Atomic<u32>, expected: u32, timeout: Option<Duration>)
     // A timeout of 0 means infinite.
     // We round smaller timeouts up to 1 millisecond.
     // Overflows are rounded up to an infinite timeout.
-    let timeout_ms =
-        timeout.and_then(|d| Some(i32::try_from(d.as_millis()).ok()?.max(1))).unwrap_or(0);
+    let timeout_ms = timeout
+        .and_then(|d| Some(i32::try_from(d.as_millis()).unwrap_or(i32::MAX).max(1)))
+        .unwrap_or(0);
 
     let r = unsafe {
         libc::umtx_sleep(futex as *const Atomic<u32> as *const i32, expected as i32, timeout_ms)
