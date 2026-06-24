@@ -74,8 +74,8 @@ impl Session {
             tracing::error!(
                 "llvm-link returned with Exit status: {}\n stdout: {}\n stderr: {}",
                 llvm_link_output.status,
-                String::from_utf8(llvm_link_output.stdout).unwrap(),
-                String::from_utf8(llvm_link_output.stderr).unwrap(),
+                String::from_utf8_lossy(&llvm_link_output.stdout),
+                String::from_utf8_lossy(&llvm_link_output.stderr),
             );
             anyhow::bail!("llvm-link failed to link files {:?}", self.files);
         }
@@ -116,8 +116,8 @@ impl Session {
             tracing::error!(
                 "opt returned with Exit status: {}\n stdout: {}\n stderr: {}",
                 opt_output.status,
-                String::from_utf8(opt_output.stdout).unwrap(),
-                String::from_utf8(opt_output.stderr).unwrap(),
+                String::from_utf8_lossy(&opt_output.stdout),
+                String::from_utf8_lossy(&opt_output.stderr),
             );
             anyhow::bail!("opt failed optimize bitcode: {}", self.link_path.display());
         };
@@ -149,8 +149,8 @@ impl Session {
             tracing::error!(
                 "llc returned with Exit status: {}\n stdout: {}\n stderr: {}",
                 lcc_output.status,
-                String::from_utf8(lcc_output.stdout).unwrap(),
-                String::from_utf8(lcc_output.stderr).unwrap(),
+                String::from_utf8_lossy(&lcc_output.stdout),
+                String::from_utf8_lossy(&lcc_output.stderr),
             );
 
             anyhow::bail!(
