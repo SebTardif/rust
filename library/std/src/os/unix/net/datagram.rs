@@ -8,6 +8,7 @@
     target_os = "solaris",
     target_os = "illumos",
     target_os = "haiku",
+    target_os = "hurd",
     target_os = "nto",
     target_os = "cygwin"
 ))]
@@ -35,6 +36,7 @@ use crate::{fmt, io};
     target_os = "solaris",
     target_os = "illumos",
     target_os = "haiku",
+    target_os = "hurd",
     target_os = "nto",
     target_os = "cygwin"
 )))]
