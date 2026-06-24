@@ -82,8 +82,13 @@ impl RwLock {
 
     #[inline]
     pub unsafe fn downgrade(&self) {
-        // The SOLID platform does not support the `downgrade` operation for reader writer locks, so
-        // this function is simply a no-op as only 1 reader can read: the original writer.
+        // The SOLID platform does not support an atomic downgrade operation, so
+        // release the write lock and re-acquire as a read lock. There is a brief
+        // window where the lock is fully unlocked, but this is better than the
+        // previous no-op which left the lock write-held and blocked all readers.
+        let rwl = self.raw();
+        expect_success_aborting(unsafe { abi::rwl_unl_rwl(rwl) }, &"rwl_unl_rwl");
+        expect_success(unsafe { abi::rwl_loc_rdl(rwl) }, &"rwl_loc_rdl");
     }
 }
 
