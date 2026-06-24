@@ -1449,10 +1449,10 @@ fn codegen_regular_intrinsic_call<'tcx>(
             intrinsic_args!(fx, args => (f); intrinsic);
             let f = f.load_scalar(fx);
 
-            let res = crate::cast::clif_int_or_float_cast(
+            // Must match SSA/LLVM fptosi/fptoui (no saturation, no NaN-to-zero).
+            let res = crate::cast::clif_float_to_int_unchecked(
                 fx,
                 f,
-                false,
                 fx.clif_type(ret.layout().ty).unwrap(),
                 type_sign(ret.layout().ty),
             );
