@@ -508,7 +508,7 @@ impl Socket {
             }
             let mut arg: libc::accept_filter_arg = unsafe { mem::zeroed() };
             arg.af_name = buf;
-            unsafe { setsockopt(self, libc::SOL_SOCKET, libc::SO_ACCEPTFILTER, &mut arg) }
+            unsafe { setsockopt(self, libc::SOL_SOCKET, libc::SO_ACCEPTFILTER, arg) }
         } else {
             unsafe {
                 setsockopt(
