@@ -247,7 +247,11 @@ impl ExitStatus {
     }
 
     pub fn code(&self) -> Option<i32> {
-        Some(self.0.as_usize() as i32)
+        // Clamp the UEFI status to i32 range. On 64-bit UEFI, error statuses
+        // have bit 63 set (e.g. EFI_DEVICE_ERROR = 0x8000_0000_0000_0007).
+        // A plain `as i32` truncates the upper bits, losing the error indicator.
+        let val = self.0.as_usize();
+        Some(i32::try_from(val).unwrap_or(if val > i32::MAX as usize { i32::MAX } else { val as i32 }))
     }
 }
 
@@ -282,7 +286,9 @@ impl Into<ExitStatus> for ExitStatusError {
 
 impl ExitStatusError {
     pub fn code(self) -> Option<NonZero<i32>> {
-        NonZeroI32::new(self.0.as_usize() as i32)
+        let val = self.0.as_usize();
+        let clamped = i32::try_from(val).unwrap_or(i32::MAX);
+        NonZeroI32::new(clamped)
     }
 }
 
