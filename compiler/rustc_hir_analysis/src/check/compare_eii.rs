@@ -97,7 +97,8 @@ pub(crate) fn compare_eii_function_types<'tcx>(
         ocx.normalize(&norm_cause, param_env, Unnormalized::new_wip(declaration_sig));
     // We also have to add the normalized declaration
     // as we don't normalize during implied bounds computation.
-    wf_tys.extend(external_impl_sig.inputs_and_output.iter());
+    // (Must use declaration_sig, not external_impl_sig; see compare_impl_item.rs.)
+    wf_tys.extend(declaration_sig.inputs_and_output.iter());
 
     // FIXME: Copied over from compare impl items, same issue:
     // We'd want to keep more accurate spans than "the method signature" when
