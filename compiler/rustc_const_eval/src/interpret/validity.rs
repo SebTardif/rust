@@ -995,7 +995,9 @@ impl<'rt, 'tcx, M: Machine<'tcx>> ValidityVisitor<'rt, 'tcx, M> {
                 // Nothing to check.
                 interp_ok(true)
             }
-            ty::UnsafeBinder(_) => todo!("FIXME(unsafe_binder)"),
+            // Unsafe binders are compound: validate the inner value (same as other
+            // non-primitive types that are not layout-less).
+            ty::UnsafeBinder(_) => interp_ok(false),
             // The above should be all the primitive types. The rest is compound, we
             // check them by visiting their fields/variants.
             ty::Adt(..)
