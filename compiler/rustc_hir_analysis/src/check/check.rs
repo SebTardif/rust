@@ -2194,7 +2194,9 @@ fn opaque_type_cycle_error(tcx: TyCtxt<'_>, opaque_def_id: LocalDefId) -> ErrorG
                             ty::Alias(ty::AliasTy { kind: ty::Opaque { def_id: def }, .. }) => {
                                 self.opaques.push(def);
                             }
-                            ty::Closure(def_id, ..) | ty::Coroutine(def_id, ..) => {
+                            ty::Closure(def_id, ..)
+                            | ty::CoroutineClosure(def_id, ..)
+                            | ty::Coroutine(def_id, ..) => {
                                 self.closures.push(def_id);
                                 t.super_visit_with(self);
                             }
