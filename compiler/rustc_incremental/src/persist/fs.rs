@@ -343,6 +343,11 @@ pub fn finalize_session_directory(sess: &Session, svh: Option<Svh>) {
         .to_string();
 
     // Keep the 's-{timestamp}-{random-number}' prefix, but replace "working" with the SVH of the crate
+    assert!(
+        sub_dir_name.ends_with("-working"),
+        "expected session directory ending with '-working', got {:?}",
+        sub_dir_name
+    );
     sub_dir_name.truncate(sub_dir_name.len() - "working".len());
     // Double-check that we kept this: "s-{timestamp}-{random-number}-"
     assert!(sub_dir_name.ends_with('-'), "{:?}", sub_dir_name);
