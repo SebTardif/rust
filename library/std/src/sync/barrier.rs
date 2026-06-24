@@ -68,6 +68,9 @@ impl Barrier {
     /// A barrier will block all threads which call [`wait()`] until the `n`th thread calls [`wait()`],
     /// and then wake up all threads at once.
     ///
+    /// Note: if `n` is 0, every call to [`wait()`] will immediately return, with each
+    /// thread receiving `is_leader() == true`. No synchronization takes place.
+    ///
     /// [`wait()`]: Barrier::wait
     ///
     /// # Examples
