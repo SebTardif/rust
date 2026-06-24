@@ -23,6 +23,9 @@ fn run_common(name: &str, args: Option<&[&str]>) -> Command {
         cmd
     } else if let Ok(runner) = std::env::var("RUNNER") {
         let mut args = split_maybe_args(&runner);
+        if args.is_empty() {
+            panic!("RUNNER environment variable is set but empty or contains only whitespace");
+        }
 
         let prog = args.remove(0);
         let mut cmd = Command::new(prog);
