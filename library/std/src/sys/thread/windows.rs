@@ -77,11 +77,7 @@ impl Thread {
 }
 
 pub fn available_parallelism() -> io::Result<NonZero<usize>> {
-    let res = unsafe {
-        let mut sysinfo: c::SYSTEM_INFO = crate::mem::zeroed();
-        c::GetSystemInfo(&mut sysinfo);
-        sysinfo.dwNumberOfProcessors as usize
-    };
+    let res = unsafe { c::GetActiveProcessorCount(c::ALL_PROCESSOR_GROUPS) as usize };
     match res {
         0 => Err(io::Error::UNKNOWN_THREAD_COUNT),
         cpus => Ok(unsafe { NonZero::new_unchecked(cpus) }),
