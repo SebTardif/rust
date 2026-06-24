@@ -8,6 +8,12 @@ use crate::sys::fd::FileDesc;
 use crate::sys::{AsInner, FromInner, IntoInner, map_motor_error, unsupported};
 use crate::time::Duration;
 
+fn first_socket_addr<A: ToSocketAddrs>(addr: A) -> io::Result<SocketAddr> {
+    addr.to_socket_addrs()?.next().ok_or_else(|| {
+        io::const_error!(io::ErrorKind::InvalidInput, "could not resolve to any addresses")
+    })
+}
+
 // We want to re-use as much of Rust's stdlib code as possible,
 // and most of it is unixy, but with a lot of nesting.
 #[derive(Debug)]
@@ -28,7 +34,7 @@ impl TcpStream {
     }
 
     pub fn connect<A: ToSocketAddrs>(addr: A) -> io::Result<TcpStream> {
-        let addr = into_netc(&addr.to_socket_addrs()?.next().unwrap());
+        let addr = into_netc(&first_socket_addr(addr)?);
         moto_rt::net::tcp_connect(&addr, Duration::MAX, false)
             .map(|fd| Self { inner: unsafe { Socket::from_raw_fd(fd) } })
             .map_err(map_motor_error)
@@ -178,7 +184,7 @@ impl TcpListener {
     }
 
     pub fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<TcpListener> {
-        let addr = into_netc(&addr.to_socket_addrs()?.next().unwrap());
+        let addr = into_netc(&first_socket_addr(addr)?);
         moto_rt::net::bind(moto_rt::net::PROTO_TCP, &addr)
             .map(|fd| Self { inner: unsafe { Socket::from_raw_fd(fd) } })
             .map_err(map_motor_error)
@@ -246,7 +252,7 @@ impl UdpSocket {
     }
 
     pub fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<UdpSocket> {
-        let addr = into_netc(&addr.to_socket_addrs()?.next().unwrap());
+        let addr = into_netc(&first_socket_addr(addr)?);
         moto_rt::net::bind(moto_rt::net::PROTO_UDP, &addr)
             .map(|fd| Self { inner: unsafe { Socket::from_raw_fd(fd) } })
             .map_err(map_motor_error)
@@ -394,7 +400,7 @@ impl UdpSocket {
     }
 
     pub fn connect<A: ToSocketAddrs>(&self, addr: A) -> io::Result<()> {
-        let addr = into_netc(&addr.to_socket_addrs()?.next().unwrap());
+        let addr = into_netc(&first_socket_addr(addr)?);
         moto_rt::net::udp_connect(self.inner.as_raw_fd(), &addr).map_err(map_motor_error)
     }
 }
