@@ -319,7 +319,9 @@ impl<C> DebugWithContext<C> for State {
 
 impl JoinSemiLattice for State {
     fn join(&mut self, other: &Self) -> bool {
-        self.qualif.join(&other.qualif) || self.borrow.join(&other.borrow)
+        let a = self.qualif.join(&other.qualif);
+        let b = self.borrow.join(&other.borrow);
+        a | b
     }
 }
 
