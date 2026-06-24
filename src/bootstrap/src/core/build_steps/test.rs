@@ -1238,7 +1238,8 @@ impl Step for Clippy {
 fn bin_path_for_cargo(builder: &Builder<'_>, compiler: Compiler) -> OsString {
     let path = builder.sysroot(compiler).join("bin");
     let old_path = env::var_os("PATH").unwrap_or_default();
-    env::join_paths(iter::once(path).chain(env::split_paths(&old_path))).expect("")
+    env::join_paths(iter::once(path).chain(env::split_paths(&old_path)))
+        .expect("failed to construct PATH for cargo")
 }
 
 /// Run the rustdoc-themes tool to test a given compiler.
