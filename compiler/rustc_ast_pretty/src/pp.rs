@@ -435,7 +435,7 @@ impl Printer {
             self.print_stack.push(PrintFrame::Broken { indent: self.indent, breaks: token.breaks });
             self.indent = match token.indent {
                 IndentStyle::Block { offset } => {
-                    usize::try_from(self.indent as isize + offset).unwrap()
+                    usize::try_from(self.indent as isize + offset).unwrap_or(0)
                 }
                 IndentStyle::Visual => (MARGIN - self.space) as usize,
             };
