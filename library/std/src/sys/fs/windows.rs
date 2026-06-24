@@ -1558,10 +1558,22 @@ fn metadata(path: &WCStr, reparse: ReparsePoint) -> io::Result<FileAttr> {
 }
 
 pub fn set_perm(p: &WCStr, perm: FilePermissions) -> io::Result<()> {
-    unsafe {
-        cvt(c::SetFileAttributesW(p.as_ptr(), perm.attrs))?;
-        Ok(())
-    }
+    // Open the target (follow reparse points) and set attributes via handle so
+    // behavior matches `File::set_permissions` rather than ambiguous path APIs.
+    let mut opts = OpenOptions::new();
+    opts.access_mode(c::FILE_WRITE_ATTRIBUTES);
+    opts.custom_flags(c::FILE_FLAG_BACKUP_SEMANTICS);
+    let file = File::open_native(p, &opts)?;
+    file.set_permissions(perm)
+}
+
+pub fn set_perm_nofollow(p: &WCStr, perm: FilePermissions) -> io::Result<()> {
+    let mut opts = OpenOptions::new();
+    opts.access_mode(c::FILE_WRITE_ATTRIBUTES);
+    // `FILE_FLAG_OPEN_REPARSE_POINT` so permissions apply to the link/junction itself.
+    opts.custom_flags(c::FILE_FLAG_BACKUP_SEMANTICS | c::FILE_FLAG_OPEN_REPARSE_POINT);
+    let file = File::open_native(p, &opts)?;
+    file.set_permissions(perm)
 }
 
 pub fn set_times(p: &WCStr, times: FileTimes) -> io::Result<()> {
