@@ -122,19 +122,10 @@ pub fn set_permissions(path: &Path, perm: FilePermissions) -> io::Result<()> {
 
 #[cfg(all(unix, not(target_os = "vxworks")))]
 pub fn set_permissions_nofollow(path: &Path, perm: crate::fs::Permissions) -> io::Result<()> {
-    use crate::fs::OpenOptions;
-
-    let mut options = OpenOptions::new();
-
-    // ESP-IDF and Horizon do not support O_NOFOLLOW, so we skip setting it.
-    // Their filesystems do not have symbolic links, so no special handling is required.
-    #[cfg(not(any(target_os = "espidf", target_os = "horizon")))]
-    {
-        use crate::os::unix::fs::OpenOptionsExt;
-        options.custom_flags(libc::O_NOFOLLOW);
-    }
-
-    options.open(path)?.set_permissions(perm)
+    // Operate on the path itself (do not follow a trailing symlink) via fchmodat
+    // where supported. Opening with O_NOFOLLOW fails with ELOOP on Linux/macOS
+    // when the path is a symlink, which cannot implement "chmod the link".
+    with_native_path(path, &|path| imp::set_perm_nofollow(path, perm.0.clone()))
 }
 
 #[cfg(any(not(unix), target_os = "vxworks"))]

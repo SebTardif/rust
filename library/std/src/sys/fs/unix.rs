@@ -1989,6 +1989,23 @@ pub fn set_perm(p: &CStr, perm: FilePermissions) -> io::Result<()> {
     cvt_r(|| unsafe { libc::chmod(p.as_ptr(), perm.mode) }).map(|_| ())
 }
 
+/// Change permissions without following the final path component if it is a symlink.
+///
+/// Uses `fchmodat(..., AT_SYMLINK_NOFOLLOW)` where available. Platforms without
+/// that API (or without symlinks) fall back to normal `chmod` via `set_perm`.
+#[cfg(not(any(target_os = "espidf", target_os = "horizon", target_os = "vita", target_os = "vxworks")))]
+pub fn set_perm_nofollow(p: &CStr, perm: FilePermissions) -> io::Result<()> {
+    cvt_r(|| unsafe {
+        libc::fchmodat(libc::AT_FDCWD, p.as_ptr(), perm.mode, libc::AT_SYMLINK_NOFOLLOW)
+    })
+    .map(|_| ())
+}
+
+#[cfg(any(target_os = "espidf", target_os = "horizon", target_os = "vita", target_os = "vxworks"))]
+pub fn set_perm_nofollow(p: &CStr, perm: FilePermissions) -> io::Result<()> {
+    set_perm(p, perm)
+}
+
 pub fn rmdir(p: &CStr) -> io::Result<()> {
     cvt(unsafe { libc::rmdir(p.as_ptr()) }).map(|_| ())
 }
