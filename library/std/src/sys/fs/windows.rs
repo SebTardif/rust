@@ -1545,7 +1545,13 @@ fn metadata(path: &WCStr, reparse: ReparsePoint) -> io::Result<FileAttr> {
                     // `FindFirstFileExW` reads the cached file information from the
                     // directory. The downside is that this metadata may be outdated.
                     let attrs = FileAttr::from(wfd);
-                    if reparse == ReparsePoint::Follow && attrs.file_type().is_symlink() {
+                    // For follow semantics (`fs::metadata`), directory-entry data is the
+                    // reparse point itself, not the target. Refuse the fallback for any
+                    // reparse point (not only name-surrogate "symlinks"), otherwise we
+                    // return wrong size/times for junctions, WSL/filter links, etc.
+                    if reparse == ReparsePoint::Follow
+                        && attrs.attributes & c::FILE_ATTRIBUTE_REPARSE_POINT != 0
+                    {
                         Err(e)
                     } else {
                         Ok(attrs)
