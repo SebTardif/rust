@@ -1084,7 +1084,40 @@ fn assemble_candidates_from_impls<'cx, 'tcx>(
                         // Integers and floats always have `u8` as their discriminant.
                         | ty::Infer(ty::InferTy::IntVar(_) | ty::InferTy::FloatVar(..)) => true,
 
-                        ty::UnsafeBinder(_) => todo!("FIXME(unsafe_binder)"),
+                        // DiscriminantKind on unsafe binders follows the inner type (see `discriminant_ty`).
+                        ty::UnsafeBinder(bound_ty) => {
+                            let inner = selcx
+                                .tcx()
+                                .instantiate_bound_regions_with_erased((*bound_ty).into());
+                            match inner.kind() {
+                                ty::Bool
+                                | ty::Char
+                                | ty::Int(_)
+                                | ty::Uint(_)
+                                | ty::Float(_)
+                                | ty::Adt(..)
+                                | ty::Foreign(_)
+                                | ty::Str
+                                | ty::Array(..)
+                                | ty::Pat(..)
+                                | ty::Slice(_)
+                                | ty::RawPtr(..)
+                                | ty::Ref(..)
+                                | ty::FnDef(..)
+                                | ty::FnPtr(..)
+                                | ty::Dynamic(..)
+                                | ty::Closure(..)
+                                | ty::CoroutineClosure(..)
+                                | ty::Coroutine(..)
+                                | ty::CoroutineWitness(..)
+                                | ty::Never
+                                | ty::Tuple(..)
+                                | ty::Infer(
+                                    ty::InferTy::IntVar(_) | ty::InferTy::FloatVar(..),
+                                ) => true,
+                                _ => false,
+                            }
+                        }
 
                         // type parameters, opaques, and unnormalized projections don't have
                         // a known discriminant and may need to be normalized further or rely
@@ -1169,7 +1202,47 @@ fn assemble_candidates_from_impls<'cx, 'tcx>(
                                 true
                             }
 
-                            ty::UnsafeBinder(_) => todo!("FIXME(unsafe_binder)"),
+                            // Pointee/metadata of an unsafe binder is that of the inner type.
+                            ty::UnsafeBinder(bound_ty) => {
+                                let inner = selcx
+                                    .tcx()
+                                    .instantiate_bound_regions_with_erased((*bound_ty).into());
+                                match *inner.kind() {
+                                    ty::Bool
+                                    | ty::Char
+                                    | ty::Int(_)
+                                    | ty::Uint(_)
+                                    | ty::Float(_)
+                                    | ty::Str
+                                    | ty::Array(..)
+                                    | ty::Pat(..)
+                                    | ty::Slice(_)
+                                    | ty::RawPtr(..)
+                                    | ty::Ref(..)
+                                    | ty::FnDef(..)
+                                    | ty::FnPtr(..)
+                                    | ty::Dynamic(..)
+                                    | ty::Closure(..)
+                                    | ty::CoroutineClosure(..)
+                                    | ty::Coroutine(..)
+                                    | ty::CoroutineWitness(..)
+                                    | ty::Never
+                                    | ty::Foreign(_)
+                                    | ty::Adt(..)
+                                    | ty::Tuple(..)
+                                    | ty::Infer(
+                                        ty::InferTy::IntVar(_) | ty::InferTy::FloatVar(..),
+                                    )
+                                    | ty::Error(..) => true,
+                                    ty::Param(_) | ty::Alias(..) if self_ty != tail => true,
+                                    _ => {
+                                        if tail.has_infer_types() {
+                                            candidate_set.mark_ambiguous();
+                                        }
+                                        false
+                                    }
+                                }
+                            }
 
                             // FIXME(compiler-errors): are Bound and Placeholder types ever known sized?
                             ty::Param(_)

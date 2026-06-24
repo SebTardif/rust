@@ -118,7 +118,12 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 Some(&f) => self.pointer_kind(f, span)?,
             },
 
-            ty::UnsafeBinder(_) => todo!("FIXME(unsafe_binder)"),
+            // Pointer kind follows the inner type once binder regions are erased,
+            // matching `discriminant_ty` / other ty queries on unsafe binders.
+            ty::UnsafeBinder(bound_ty) => {
+                let inner = self.tcx.instantiate_bound_regions_with_erased((*bound_ty).into());
+                self.pointer_kind(inner, span)?
+            }
 
             // Pointers to foreign types are thin, despite being unsized
             ty::Foreign(..) => Some(PointerKind::Thin),
