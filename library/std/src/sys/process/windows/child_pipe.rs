@@ -213,14 +213,9 @@ pub(super) fn spawn_pipe_relay(
             if len == 0 {
                 break;
             }
-            let mut start = 0;
-            while let Ok(written) = writer.write(&buf[start..len]) {
-                start += written;
-                if start == len {
-                    continue 'reader;
-                }
+            if writer.write_all(&buf[..len]).is_err() {
+                break;
             }
-            break;
         }
     });
 
