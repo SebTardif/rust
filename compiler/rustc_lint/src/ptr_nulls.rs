@@ -49,7 +49,7 @@ declare_lint! {
     ///
     /// ### Explanation
     ///
-    /// Calling methods whos safety invariants requires non-null ptr with a null pointer
+    /// Calling methods whose safety invariants require non-null ptr with a null pointer
     /// is [Undefined Behavior](https://doc.rust-lang.org/reference/behavior-considered-undefined.html)!
     INVALID_NULL_ARGUMENTS,
     Deny,
