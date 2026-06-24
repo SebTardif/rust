@@ -279,7 +279,9 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                 };
 
                 debug!("add_moved_or_invoked_closure_note: closure={:?}", closure);
-                if let ty::Closure(did, _) = self.body.local_decls[closure].ty.kind() {
+                if let ty::Closure(did, _) | ty::CoroutineClosure(did, _) =
+                    self.body.local_decls[closure].ty.kind()
+                {
                     let did = did.expect_local();
                     if let Some((span, hir_place)) = self.infcx.tcx.closure_kind_origin(did) {
                         diag.subdiagnostic(OnClosureNote::InvokedTwice {
@@ -294,7 +296,8 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
 
         // Check if we are just moving a closure after it has been invoked.
         if let Some(target) = target
-            && let ty::Closure(did, _) = self.body.local_decls[target].ty.kind()
+            && let ty::Closure(did, _) | ty::CoroutineClosure(did, _) =
+                self.body.local_decls[target].ty.kind()
         {
             let did = did.expect_local();
             if let Some((span, hir_place)) = self.infcx.tcx.closure_kind_origin(did) {
@@ -526,7 +529,9 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                 ty::Array(ty, _) | ty::Slice(ty) => {
                     self.describe_field_from_ty(ty, field, variant_index, including_tuple_field)
                 }
-                ty::Closure(def_id, _) | ty::Coroutine(def_id, _) => {
+                ty::Closure(def_id, _)
+                | ty::CoroutineClosure(def_id, _)
+                | ty::Coroutine(def_id, _) => {
                     // We won't be borrowck'ing here if the closure came from another crate,
                     // so it's safe to call `expect_local`.
                     //
