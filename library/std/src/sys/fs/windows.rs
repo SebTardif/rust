@@ -1603,19 +1603,18 @@ pub fn canonicalize(p: &WCStr) -> io::Result<PathBuf> {
 pub fn copy(from: &WCStr, to: &WCStr) -> io::Result<u64> {
     unsafe extern "system" fn callback(
         _TotalFileSize: i64,
-        _TotalBytesTransferred: i64,
+        TotalBytesTransferred: i64,
         _StreamSize: i64,
-        StreamBytesTransferred: i64,
-        dwStreamNumber: u32,
+        _StreamBytesTransferred: i64,
+        _dwStreamNumber: u32,
         _dwCallbackReason: u32,
         _hSourceFile: c::HANDLE,
         _hDestinationFile: c::HANDLE,
         lpData: *const c_void,
     ) -> u32 {
         unsafe {
-            if dwStreamNumber == 1 {
-                *(lpData as *mut i64) = StreamBytesTransferred;
-            }
+            // Track cumulative progress across all streams (default + ADS), not only stream 1.
+            *(lpData as *mut i64) = TotalBytesTransferred;
             c::PROGRESS_CONTINUE
         }
     }
