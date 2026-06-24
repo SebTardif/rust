@@ -365,7 +365,10 @@ pub fn current_exe() -> io::Result<PathBuf> {
     #[cfg(not(test))]
     use crate::env;
 
-    let exe_path = env::args().next().unwrap();
+    let exe_path = env::args().next().ok_or(io::const_error!(
+        io::ErrorKind::NotFound,
+        "an executable path was not found because no arguments were provided through argv",
+    ))?;
     let path = path::Path::new(&exe_path);
     path.canonicalize()
 }
