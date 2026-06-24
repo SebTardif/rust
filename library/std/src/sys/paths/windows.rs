@@ -73,7 +73,11 @@ where
             joined.push(sep)
         }
         let v = path.encode_wide().collect::<Vec<u16>>();
-        if v.contains(&(b'"' as u16)) {
+        // Interior NULs would truncate when the joined string is later passed to
+        // WinAPI / environment blocks as a C-style wide string (e.g. PATH).
+        if v.contains(&0) {
+            return Err(JoinPathsError);
+        } else if v.contains(&(b'"' as u16)) {
             return Err(JoinPathsError);
         } else if v.contains(&sep) {
             joined.push(b'"' as u16);
@@ -89,7 +93,7 @@ where
 
 impl fmt::Display for JoinPathsError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        "path segment contains `\"`".fmt(f)
+        "path segment contains `\"` or interior NUL".fmt(f)
     }
 }
 
