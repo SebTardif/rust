@@ -222,6 +222,10 @@ where
         }
     }
 
+    // Track elapsed time from the first timed wait so spurious wakeups do not
+    // reset the full duration (was ~2x timeout if first wait was spurious).
+    let start = Instant::now();
+
     match wait_checked(event_mask, Some(duration)) {
         false => return,                    // timed out
         true if should_wake_up() => return, // woken up
@@ -238,13 +242,11 @@ where
         }
     }
 
-    // Continue waiting, but take note of time spent waiting so we don't wait
-    // forever. We intentionally don't call `Instant::now()` before this point
-    // to avoid the cost of the `insecure_time` usercall in case there are no
-    // spurious wakeups.
-
-    let start = Instant::now();
-    let mut remaining = duration;
+    // Continue waiting with remaining time after first wait + drain.
+    let mut remaining = match duration.checked_sub(start.elapsed()) {
+        Some(remaining) => remaining,
+        None => return,
+    };
     loop {
         match wait_checked(event_mask, Some(remaining)) {
             false => return,                    // timed out
