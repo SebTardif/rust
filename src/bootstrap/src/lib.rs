@@ -597,7 +597,7 @@ impl Build {
             .lines()
             .filter_map(|x| x.strip_prefix("release:"))
             .next()
-            .unwrap()
+            .expect("rustc --version --verbose output did not contain a 'release:' line")
             .trim();
         if local_release.split('.').take(2).eq(version.split('.').take(2)) {
             build.do_if_verbose(|| println!("auto-detected local-rebuild {local_release}"));
