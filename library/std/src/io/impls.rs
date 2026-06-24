@@ -546,6 +546,8 @@ impl<A: Allocator> Read for VecDeque<u8, A> {
                     buf_back.copy_from_slice(back);
                 }
                 None => {
+                    buf_front.copy_from_slice(front);
+                    buf_back[..back.len()].copy_from_slice(back);
                     self.clear();
                     return Err(io::Error::READ_EXACT_EOF);
                 }
