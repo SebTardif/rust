@@ -191,7 +191,9 @@ struct RemoveOnDrop<'a> {
 
 impl Drop for RemoveOnDrop<'_> {
     fn drop(&mut self) {
-        t!(fs::remove_dir_all(self.inner));
+        if let Err(e) = fs::remove_dir_all(self.inner) {
+            eprintln!("warning: failed to remove {}: {e}", self.inner.display());
+        }
     }
 }
 
