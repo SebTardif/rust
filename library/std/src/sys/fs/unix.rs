@@ -1456,7 +1456,8 @@ impl File {
                 target_os = "android",
                 target_vendor = "apple",
             ) => {
-                cvt(unsafe { libc::flock(self.as_raw_fd(), libc::LOCK_EX) })?;
+                // flock is interruptible; retry on EINTR like other blocking syscalls.
+                cvt_r(|| unsafe { libc::flock(self.as_raw_fd(), libc::LOCK_EX) })?;
                 return Ok(());
             }
             _ => {
@@ -1480,7 +1481,8 @@ impl File {
                 target_os = "android",
                 target_vendor = "apple",
             ) => {
-                cvt(unsafe { libc::flock(self.as_raw_fd(), libc::LOCK_SH) })?;
+                // flock is interruptible; retry on EINTR like other blocking syscalls.
+                cvt_r(|| unsafe { libc::flock(self.as_raw_fd(), libc::LOCK_SH) })?;
                 return Ok(());
             }
             _ => {
@@ -1574,7 +1576,8 @@ impl File {
                 target_os = "android",
                 target_vendor = "apple",
             ) => {
-                cvt(unsafe { libc::flock(self.as_raw_fd(), libc::LOCK_UN) })?;
+                // flock is interruptible; retry on EINTR like other blocking syscalls.
+                cvt_r(|| unsafe { libc::flock(self.as_raw_fd(), libc::LOCK_UN) })?;
                 return Ok(());
             }
             _ => {
