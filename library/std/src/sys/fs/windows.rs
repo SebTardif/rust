@@ -1643,73 +1643,91 @@ pub fn junction_point(original: &Path, link: &Path) -> io::Result<()> {
 
     let d = File::open(link, &opts)?;
 
-    // We need to get an absolute, NT-style path.
-    let path_bytes = original.as_os_str().as_encoded_bytes();
-    let abs_path: Vec<u16> = if path_bytes.starts_with(br"\\?\") || path_bytes.starts_with(br"\??\")
-    {
-        // It's already an absolute path, we just need to convert the prefix to `\??\`
-        let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&path_bytes[4..]) };
-        r"\??\".encode_utf16().chain(bytes.encode_wide()).collect()
-    } else {
-        // Get an absolute path and then convert the prefix to `\??\`
-        let abs_path = crate::path::absolute(original)?.into_os_string().into_encoded_bytes();
-        if abs_path.len() > 0 && abs_path[1..].starts_with(br":\") {
-            let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&abs_path) };
+    let result = (|| -> io::Result<()> {
+        // We need to get an absolute, NT-style path.
+        let path_bytes = original.as_os_str().as_encoded_bytes();
+        let abs_path: Vec<u16> = if path_bytes.starts_with(br"\\?\") || path_bytes.starts_with(br"\??\")
+        {
+            // It's already an absolute path, we just need to convert the prefix to `\??\`
+            let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&path_bytes[4..]) };
             r"\??\".encode_utf16().chain(bytes.encode_wide()).collect()
-        } else if abs_path.starts_with(br"\\.\") {
-            let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&abs_path[4..]) };
-            r"\??\".encode_utf16().chain(bytes.encode_wide()).collect()
-        } else if abs_path.starts_with(br"\\") {
-            let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&abs_path[2..]) };
-            r"\??\UNC\".encode_utf16().chain(bytes.encode_wide()).collect()
         } else {
-            return Err(io::const_error!(io::ErrorKind::InvalidInput, "path is not valid"));
+            // Get an absolute path and then convert the prefix to `\??\`
+            let abs_path = crate::path::absolute(original)?.into_os_string().into_encoded_bytes();
+            if abs_path.len() > 0 && abs_path[1..].starts_with(br":\") {
+                let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&abs_path) };
+                r"\??\".encode_utf16().chain(bytes.encode_wide()).collect()
+            } else if abs_path.starts_with(br"\\.\") {
+                let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&abs_path[4..]) };
+                r"\??\".encode_utf16().chain(bytes.encode_wide()).collect()
+            } else if abs_path.starts_with(br"\\") {
+                let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&abs_path[2..]) };
+                r"\??\UNC\".encode_utf16().chain(bytes.encode_wide()).collect()
+            } else {
+                return Err(io::const_error!(io::ErrorKind::InvalidInput, "path is not valid"));
+            }
+        };
+        // Defined inline so we don't have to mess about with variable length buffer.
+        #[repr(C)]
+        pub struct MountPointBuffer {
+            ReparseTag: u32,
+            ReparseDataLength: u16,
+            Reserved: u16,
+            SubstituteNameOffset: u16,
+            SubstituteNameLength: u16,
+            PrintNameOffset: u16,
+            PrintNameLength: u16,
+            PathBuffer: [MaybeUninit<u16>; c::MAXIMUM_REPARSE_DATA_BUFFER_SIZE as usize],
         }
-    };
-    // Defined inline so we don't have to mess about with variable length buffer.
-    #[repr(C)]
-    pub struct MountPointBuffer {
-        ReparseTag: u32,
-        ReparseDataLength: u16,
-        Reserved: u16,
-        SubstituteNameOffset: u16,
-        SubstituteNameLength: u16,
-        PrintNameOffset: u16,
-        PrintNameLength: u16,
-        PathBuffer: [MaybeUninit<u16>; c::MAXIMUM_REPARSE_DATA_BUFFER_SIZE as usize],
-    }
-    let data_len = 12 + (abs_path.len() * 2);
-    if data_len > u16::MAX as usize {
-        return Err(io::const_error!(io::ErrorKind::InvalidInput, "`original` path is too long"));
-    }
-    let data_len = data_len as u16;
-    let mut header = MountPointBuffer {
-        ReparseTag: c::IO_REPARSE_TAG_MOUNT_POINT,
-        ReparseDataLength: data_len,
-        Reserved: 0,
-        SubstituteNameOffset: 0,
-        SubstituteNameLength: (abs_path.len() * 2) as u16,
-        PrintNameOffset: ((abs_path.len() + 1) * 2) as u16,
-        PrintNameLength: 0,
-        PathBuffer: [MaybeUninit::uninit(); c::MAXIMUM_REPARSE_DATA_BUFFER_SIZE as usize],
-    };
-    unsafe {
-        let ptr = header.PathBuffer.as_mut_ptr();
-        ptr.copy_from(abs_path.as_ptr().cast_uninit(), abs_path.len());
+        // Mount-point path buffer: substitute name, terminating NUL, then empty print name
+        // (PrintNameOffset points at the second NUL slot; PrintNameLength is 0).
+        let path_units = abs_path.len() + 1; // substitute + NUL
+        let data_len = 12 + path_units * 2;
+        if data_len > u16::MAX as usize {
+            return Err(io::const_error!(io::ErrorKind::InvalidInput, "`original` path is too long"));
+        }
+        let data_len = data_len as u16;
+        let mut header = MountPointBuffer {
+            ReparseTag: c::IO_REPARSE_TAG_MOUNT_POINT,
+            ReparseDataLength: data_len,
+            Reserved: 0,
+            SubstituteNameOffset: 0,
+            SubstituteNameLength: (abs_path.len() * 2) as u16,
+            PrintNameOffset: ((abs_path.len() + 1) * 2) as u16,
+            PrintNameLength: 0,
+            PathBuffer: [MaybeUninit::uninit(); c::MAXIMUM_REPARSE_DATA_BUFFER_SIZE as usize],
+        };
+        unsafe {
+            let ptr = header.PathBuffer.as_mut_ptr();
+            ptr.copy_from(abs_path.as_ptr().cast_uninit(), abs_path.len());
+            // Terminating NUL for the substitute name (PrintNameOffset reserves this slot).
+            ptr.add(abs_path.len()).write(MaybeUninit::new(0));
 
-        let mut ret = 0;
-        cvt(c::DeviceIoControl(
-            d.as_raw_handle(),
-            c::FSCTL_SET_REPARSE_POINT,
-            (&raw const header).cast::<c_void>(),
-            data_len as u32 + 8,
-            ptr::null_mut(),
-            0,
-            &mut ret,
-            ptr::null_mut(),
-        ))
-        .map(drop)
+            let mut ret = 0;
+            cvt(c::DeviceIoControl(
+                d.as_raw_handle(),
+                c::FSCTL_SET_REPARSE_POINT,
+                (&raw const header).cast::<c_void>(),
+                data_len as u32 + 8,
+                ptr::null_mut(),
+                0,
+                &mut ret,
+                ptr::null_mut(),
+            ))
+            .map(drop)
+        }
+    })();
+
+    if result.is_err() {
+        // Close our handle first; RemoveDirectoryW fails on an open directory.
+        drop(d);
+        // Roll back the empty directory so retries are not blocked by AlreadyExists
+        // and callers are not left with a non-junction directory. Best-effort only.
+        if let Ok(p) = maybe_verbatim(link) {
+            let _ = rmdir(&p);
+        }
     }
+    result
 }
 
 // Try to see if a file exists but, unlike `exists`, report I/O errors.
