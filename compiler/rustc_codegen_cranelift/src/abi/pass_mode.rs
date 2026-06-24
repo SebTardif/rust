@@ -123,8 +123,13 @@ impl<'tcx> ArgAbiExt<'tcx> for ArgAbi<'tcx, Ty<'tcx>> {
                 _ => unreachable!("{:?}", self.layout.backend_repr),
             },
             PassMode::Cast { ref cast, pad_i32 } => {
-                assert!(!pad_i32, "padding support not yet implemented");
-                cast_target_to_abi_params(cast).into_iter().map(|(_, param)| param).collect()
+                let mut params: SmallVec<[AbiParam; 4]> = SmallVec::new();
+                if pad_i32 {
+                    // Match rustc_codegen_ssa: some ABIs (e.g. x86) insert a leading i32 pad.
+                    params.push(AbiParam::new(types::I32));
+                }
+                params.extend(cast_target_to_abi_params(cast).into_iter().map(|(_, param)| param));
+                params
             }
             PassMode::Indirect { attrs, meta_attrs: None, on_stack } => {
                 if on_stack {
