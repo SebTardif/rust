@@ -1,7 +1,7 @@
 use libc::{MSG_PEEK, c_int, c_void, size_t, sockaddr, socklen_t};
 
 #[cfg(not(any(target_os = "espidf", target_os = "nuttx")))]
-use crate::ffi::CStr;
+use crate::ffi::{CStr, CString};
 use crate::io::{self, BorrowedBuf, BorrowedCursor, IoSlice, IoSliceMut};
 use crate::net::{Shutdown, SocketAddr};
 use crate::os::fd::{AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd};
@@ -522,13 +522,13 @@ impl Socket {
     }
 
     #[cfg(any(target_os = "freebsd", target_os = "netbsd"))]
-    pub fn acceptfilter(&self) -> io::Result<&CStr> {
+    pub fn acceptfilter(&self) -> io::Result<CString> {
         let arg: libc::accept_filter_arg =
             unsafe { getsockopt(self, libc::SOL_SOCKET, libc::SO_ACCEPTFILTER)? };
         let s: &[u8] =
             unsafe { core::slice::from_raw_parts(arg.af_name.as_ptr() as *const u8, 16) };
         let name = CStr::from_bytes_with_nul(s).unwrap();
-        Ok(name)
+        Ok(name.to_owned())
     }
 
     #[cfg(any(target_os = "solaris", target_os = "illumos"))]
