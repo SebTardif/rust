@@ -1925,6 +1925,7 @@ fn exec_linker(
                 for c in self.arg.chars() {
                     match c {
                         '"' => write!(f, "\\{c}")?,
+                        '\\' => write!(f, "\\\\")?,
                         c => write!(f, "{c}")?,
                     }
                 }
