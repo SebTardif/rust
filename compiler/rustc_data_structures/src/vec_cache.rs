@@ -307,7 +307,7 @@ where
     pub fn complete(&self, key: K, value: V, index: I) {
         let key = u32::try_from(key.index()).unwrap();
         let slot_idx = SlotIndex::from_index(key);
-        if slot_idx.put(&self.buckets, value, index.index() as u32) {
+        if slot_idx.put(&self.buckets, value, u32::try_from(index.index()).unwrap()) {
             let present_idx = self.len.fetch_add(1, Ordering::Relaxed);
             let slot = SlotIndex::from_index(u32::try_from(present_idx).unwrap());
             // SAFETY: We should always be uniquely putting due to `len` fetch_add returning unique values.
