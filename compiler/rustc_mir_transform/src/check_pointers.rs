@@ -72,7 +72,54 @@ pub(crate) fn check_pointers<'tcx, F>(
     // statements/blocks after. Iterating or visiting the MIR in order would require updating
     // our current location after every insertion. By iterating backwards, we dodge this issue:
     // The only Locations that an insertion changes have already been handled.
+    //
+    // Terminators are visited before statements in each block (still in reverse block order)
+    // so indirect places on Call/Drop/Yield terminators get checks under `-Zub-checks`.
     for block in basic_blocks.indices().rev() {
+        let term_stmt_index = basic_blocks[block].statements.len();
+        let term_location = Location { block, statement_index: term_stmt_index };
+        let term_source_info = basic_blocks[block].terminator().source_info;
+
+        let mut term_finder = PointerFinder::new(
+            tcx,
+            local_decls,
+            typing_env,
+            excluded_pointees,
+            field_projection_mode,
+        );
+        term_finder.visit_terminator(basic_blocks[block].terminator(), term_location);
+
+        for (local, ty, context) in term_finder.into_found_pointers() {
+            debug!("Inserting terminator check for {:?}", ty);
+            let new_block = split_block(basic_blocks, term_location);
+
+            let block_data = &mut basic_blocks[block];
+            let pointer_check = on_finding(
+                tcx,
+                local,
+                ty,
+                context,
+                local_decls,
+                &mut block_data.statements,
+                term_source_info,
+            );
+            block_data.terminator = Some(Terminator {
+                source_info: term_source_info,
+                kind: TerminatorKind::Assert {
+                    cond: pointer_check.cond,
+                    expected: true,
+                    target: new_block,
+                    msg: pointer_check.assert_kind,
+                    // This calls a panic function associated with the pointer check, which
+                    // is #[rustc_nounwind]. We never want to insert an unwind into unsafe
+                    // code, because unwinding could make a failing UB check turn into much
+                    // worse UB when we start unwinding.
+                    unwind: UnwindAction::Unreachable,
+                },
+                attributes: ThinVec::new(),
+            });
+        }
+
         for statement_index in (0..basic_blocks[block].statements.len()).rev() {
             let location = Location { block, statement_index };
             let statement = &basic_blocks[block].statements[statement_index];
@@ -166,7 +213,8 @@ impl<'a, 'tcx> PointerFinder<'a, 'tcx> {
                 | MutatingUseContext::Call
                 | MutatingUseContext::Yield
                 | MutatingUseContext::Drop
-                | MutatingUseContext::Borrow,
+                | MutatingUseContext::Borrow
+                | MutatingUseContext::AsmOutput,
             ) => true,
             PlaceContext::NonMutatingUse(
                 NonMutatingUseContext::Copy
