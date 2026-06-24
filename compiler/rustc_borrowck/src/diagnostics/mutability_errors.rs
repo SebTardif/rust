@@ -465,7 +465,9 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
                 if suggest {
                     self.construct_mut_suggestion_for_local_binding_patterns(&mut err, local);
                     let tcx = self.infcx.tcx;
-                    if let ty::Closure(id, _) = *the_place_err.ty(self.body, tcx).ty.kind() {
+                    if let ty::Closure(id, _) | ty::CoroutineClosure(id, _) =
+                        *the_place_err.ty(self.body, tcx).ty.kind()
+                    {
                         self.show_mutating_upvar(tcx, id.expect_local(), the_place_err, &mut err);
                     }
                 }
@@ -519,7 +521,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
 
                 let tcx = self.infcx.tcx;
                 if let ty::Ref(_, ty, Mutability::Mut) = the_place_err.ty(self.body, tcx).ty.kind()
-                    && let ty::Closure(id, _) = *ty.kind()
+                    && let ty::Closure(id, _) | ty::CoroutineClosure(id, _) = *ty.kind()
                 {
                     self.show_mutating_upvar(tcx, id.expect_local(), the_place_err, &mut err);
                 }
