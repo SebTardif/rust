@@ -401,8 +401,8 @@ impl<'test> TestCx<'test> {
 
         let proc_res = ProcRes {
             status: output.status,
-            stdout: String::from_utf8(output.stdout).unwrap(),
-            stderr: String::from_utf8(output.stderr).unwrap(),
+            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
             truncated: Truncated::No,
             cmdline: format!("{cmd:?}"),
         };
