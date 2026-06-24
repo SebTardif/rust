@@ -475,17 +475,18 @@ LLVMRustWriteOutputFile(LLVMTargetMachineRef Target, LLVMPassManagerRef PMR,
     ErrorInfo = EC.message();
   if (ErrorInfo != "") {
     LLVMRustSetLastError(ErrorInfo.c_str());
+    LLVMDisposePassManager(PMR);
     return LLVMRustResult::Failure;
   }
 
   auto BOS = buffer_ostream(OS);
   if (DwoPath) {
     auto DOS = raw_fd_ostream(DwoPath, EC, sys::fs::OF_None);
-    EC.clear();
     if (EC)
       ErrorInfo = EC.message();
     if (ErrorInfo != "") {
       LLVMRustSetLastError(ErrorInfo.c_str());
+      LLVMDisposePassManager(PMR);
       return LLVMRustResult::Failure;
     }
     auto DBOS = buffer_ostream(DOS);
