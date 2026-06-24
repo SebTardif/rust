@@ -2983,7 +2983,11 @@ impl Path {
     #[must_use]
     #[inline]
     pub fn has_trailing_sep(&self) -> bool {
-        self.as_os_str().as_encoded_bytes().last().copied().is_some_and(is_sep_byte)
+        let verbatim =
+            HAS_PREFIXES && parse_prefix(&self.inner).is_some_and(|p| p.is_verbatim());
+        self.as_os_str().as_encoded_bytes().last().copied().is_some_and(|b| {
+            if verbatim { is_verbatim_sep(b) } else { is_sep_byte(b) }
+        })
     }
 
     /// Ensures that a path has a trailing [separator](MAIN_SEPARATOR),
@@ -3035,9 +3039,14 @@ impl Path {
     #[inline]
     pub fn trim_trailing_sep(&self) -> &Path {
         if self.has_trailing_sep() && (!self.has_root() || self.parent().is_some()) {
+            let verbatim =
+                HAS_PREFIXES && parse_prefix(&self.inner).is_some_and(|p| p.is_verbatim());
+            let is_sep = |b: &u8| {
+                if verbatim { is_verbatim_sep(*b) } else { is_sep_byte(*b) }
+            };
             let mut bytes = self.inner.as_encoded_bytes();
             while let Some((last, init)) = bytes.split_last()
-                && is_sep_byte(*last)
+                && is_sep(last)
             {
                 bytes = init;
             }
