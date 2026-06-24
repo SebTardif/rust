@@ -39,11 +39,17 @@ impl TcpStream {
     }
 
     pub fn set_read_timeout(&self, t: Option<Duration>) -> io::Result<()> {
+        if matches!(t, Some(d) if d.is_zero()) {
+            return Err(io::Error::ZERO_TIMEOUT);
+        }
         self.read_timeout.set(t).unwrap();
         Ok(())
     }
 
     pub fn set_write_timeout(&self, t: Option<Duration>) -> io::Result<()> {
+        if matches!(t, Some(d) if d.is_zero()) {
+            return Err(io::Error::ZERO_TIMEOUT);
+        }
         self.write_timeout.set(t).unwrap();
         Ok(())
     }
