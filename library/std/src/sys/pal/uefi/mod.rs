@@ -84,7 +84,7 @@ pub const fn unsupported_err() -> io::Error {
 
 pub fn abort_internal() -> ! {
     if let Some(exit_boot_service_event) =
-        NonNull::new(EXIT_BOOT_SERVICE_EVENT.load(Ordering::Acquire))
+        NonNull::new(EXIT_BOOT_SERVICE_EVENT.swap(crate::ptr::null_mut(), Ordering::Acquire))
     {
         let _ = unsafe { helpers::OwnedEvent::from_raw(exit_boot_service_event.as_ptr()) };
     }
