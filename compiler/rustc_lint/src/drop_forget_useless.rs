@@ -101,7 +101,7 @@ declare_lint! {
     /// ### Explanation
     ///
     /// Calling `std::mem::forget` [does nothing for types that
-    /// implement Copy](https://doc.rust-lang.org/std/mem/fn.drop.html) since the
+    /// implement Copy](https://doc.rust-lang.org/std/mem/fn.forget.html) since the
     /// value will be copied and moved into the function on invocation.
     ///
     /// An alternative, but also valid, explanation is that Copy types do not
