@@ -593,6 +593,9 @@ pub enum Rvalue {
     ///
     /// [`Rvalue::Reborrow`]: rustc_middle::mir::Rvalue::Reborrow
     Reborrow(Ty, Mutability, Place),
+
+    /// Wraps a value in an `unsafe<>` binder type (feature `unsafe_binders`).
+    WrapUnsafeBinder(Operand, Ty),
 }
 
 impl Rvalue {
@@ -650,6 +653,7 @@ impl Rvalue {
                 AggregateKind::RawPtr(ty, mutability) => Ok(Ty::new_ptr(ty, mutability)),
             },
             Rvalue::CopyForDeref(place) => place.ty(locals),
+            Rvalue::WrapUnsafeBinder(_, ty) => Ok(*ty),
         }
     }
 }
@@ -835,6 +839,9 @@ pub enum ProjectionElem {
     /// Like an explicit cast from an opaque type to a concrete type, but without
     /// requiring an intermediate variable.
     OpaqueCast(Ty),
+
+    /// Unwraps an `unsafe<>` binder place to its inner type (feature `unsafe_binders`).
+    UnwrapUnsafeBinder(Ty),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -1069,6 +1076,7 @@ impl ProjectionElem {
             }
             ProjectionElem::Downcast(_) => Ok(ty),
             ProjectionElem::OpaqueCast(ty) => Ok(*ty),
+            ProjectionElem::UnwrapUnsafeBinder(ty) => Ok(*ty),
         }
     }
 

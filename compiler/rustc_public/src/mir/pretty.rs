@@ -401,6 +401,9 @@ fn pretty_rvalue<W: Write>(writer: &mut W, rval: &Rvalue) -> io::Result<()> {
             if matches!(retag, crate::mir::WithRetag::No) { "no_retag " } else { "" },
             pretty_operand(op)
         ),
+        Rvalue::WrapUnsafeBinder(op, ty) => {
+            write!(writer, "wrap_unsafe_binder({}, {})", pretty_operand(op), ty)
+        }
     }
 }
 
