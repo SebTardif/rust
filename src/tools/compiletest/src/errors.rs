@@ -179,7 +179,13 @@ fn parse_expected(
     } else if line_num_adjust.starts_with('v') {
         (false, Some(line_num + line_num_adjust.len()))
     } else {
-        (false, Some(line_num - line_num_adjust.len()))
+        let adjust = line_num_adjust.len();
+        if adjust >= line_num {
+            panic!(
+                "//~{line_num_adjust} on line {line_num} points before the start of the file"
+            );
+        }
+        (false, Some(line_num - adjust))
     };
     let column_num = Some(tag.start() + 1);
 
