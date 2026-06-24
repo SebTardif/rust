@@ -352,6 +352,7 @@ fn structurally_same_type_impl<'tcx>(
                 (ty::Dynamic(..), ty::Dynamic(..))
                 | (ty::Error(..), ty::Error(..))
                 | (ty::Closure(..), ty::Closure(..))
+                | (ty::CoroutineClosure(..), ty::CoroutineClosure(..))
                 | (ty::Coroutine(..), ty::Coroutine(..))
                 | (ty::CoroutineWitness(..), ty::CoroutineWitness(..))
                 | (
