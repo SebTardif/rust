@@ -51,8 +51,10 @@ pub fn check(root_path: &Path, tidy_ctx: TidyCtx) {
             let Some(_) = line.find(REVISION_LINE_START) else {
                 continue;
             };
-            let (_, target_name) = line.split_at(REVISION_LINE_START.len());
-            targets_to_find.remove(target_name);
+            let (_, targets) = line.split_at(REVISION_LINE_START.len());
+            for target in targets.split_whitespace() {
+                targets_to_find.remove(target);
+            }
         }
     });
 
