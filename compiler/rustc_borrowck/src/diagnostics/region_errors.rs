@@ -179,9 +179,15 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, 'infcx, 'tcx> {
         if let Some(r) = self.to_error_region(fr)
             && let ty::ReLateParam(late_param) = r.kind()
             && let ty::LateParamRegionKind::ClosureEnv = late_param.kind
-            && let DefiningTy::Closure(_, args) = self.regioncx.universal_regions().defining_ty
         {
-            return args.as_closure().kind() == ty::ClosureKind::FnMut;
+            return match self.regioncx.universal_regions().defining_ty {
+                DefiningTy::Closure(_, args) => args.as_closure().kind() == ty::ClosureKind::FnMut,
+                // Async/coroutine closures use the same `ClosureEnv` late-param region shape.
+                DefiningTy::CoroutineClosure(_, args) => {
+                    args.as_coroutine_closure().kind() == ty::ClosureKind::FnMut
+                }
+                _ => false,
+            };
         }
 
         false
