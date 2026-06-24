@@ -1645,6 +1645,14 @@ pub fn junction_point(original: &Path, link: &Path) -> io::Result<()> {
 
     // We need to get an absolute, NT-style path.
     let path_bytes = original.as_os_str().as_encoded_bytes();
+    // Interior NULs in the target would truncate the reparse substitute name
+    // (same class of bug as chdir / AF_UNIX without to_u16s).
+    if path_bytes.contains(&0) {
+        return Err(io::const_error!(
+            io::ErrorKind::InvalidInput,
+            "strings passed to WinAPI cannot contain NULs",
+        ));
+    }
     let abs_path: Vec<u16> = if path_bytes.starts_with(br"\\?\") || path_bytes.starts_with(br"\??\")
     {
         // It's already an absolute path, we just need to convert the prefix to `\??\`
@@ -1653,6 +1661,12 @@ pub fn junction_point(original: &Path, link: &Path) -> io::Result<()> {
     } else {
         // Get an absolute path and then convert the prefix to `\??\`
         let abs_path = crate::path::absolute(original)?.into_os_string().into_encoded_bytes();
+        if abs_path.contains(&0) {
+            return Err(io::const_error!(
+                io::ErrorKind::InvalidInput,
+                "strings passed to WinAPI cannot contain NULs",
+            ));
+        }
         if abs_path.len() > 0 && abs_path[1..].starts_with(br":\") {
             let bytes = unsafe { OsStr::from_encoded_bytes_unchecked(&abs_path) };
             r"\??\".encode_utf16().chain(bytes.encode_wide()).collect()
