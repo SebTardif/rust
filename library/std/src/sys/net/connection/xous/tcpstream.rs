@@ -209,7 +209,7 @@ impl TcpStream {
             for (dest, src) in buf.iter_mut().zip(receive_request.raw[..length].iter()) {
                 *dest = *src;
             }
-            Ok(length)
+            Ok(length.min(buf.len()))
         } else {
             let result = receive_request.raw;
             if result[0] != 0 {
