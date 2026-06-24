@@ -1680,7 +1680,7 @@ Alternatively, you can set `build.local-rebuild=true` and use a stage0 compiler 
 
         self.info(&format!("Opening doc {}", path.display()));
         if let Err(err) = opener::open(path) {
-            self.info(&format!("{err}\n"));
+            eprintln!("WARNING: failed to open browser: {err}");
         }
     }
 
