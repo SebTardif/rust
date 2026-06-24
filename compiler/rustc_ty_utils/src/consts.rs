@@ -51,11 +51,11 @@ fn recurse_build<'tcx>(
         | &ExprKind::ValueTypeAscription { source, .. } => {
             recurse_build(tcx, body, source, root_span)?
         }
-        &ExprKind::PlaceUnwrapUnsafeBinder { .. }
-        | &ExprKind::ValueUnwrapUnsafeBinder { .. }
-        | &ExprKind::WrapUnsafeBinder { .. } => {
-            todo!("FIXME(unsafe_binders)")
-        }
+        // Unsafe binder ops are transparent for const evaluation of the inner
+        // expression (wrap/unwrap does not change the constant value tree).
+        &ExprKind::PlaceUnwrapUnsafeBinder { source }
+        | &ExprKind::ValueUnwrapUnsafeBinder { source }
+        | &ExprKind::WrapUnsafeBinder { source } => recurse_build(tcx, body, source, root_span)?,
         &ExprKind::Literal { lit, neg } => {
             let sp = node.span;
             match tcx.at(sp).lit_to_const(LitToConstInput { lit: lit.node, ty: Some(node.ty), neg })
