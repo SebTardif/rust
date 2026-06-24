@@ -33,16 +33,17 @@ pub struct FilePermissions {
 }
 
 impl FilePermissions {
+    /// True iff write permission is absent (Unix/std contract: write bits only).
     pub fn readonly(&self) -> bool {
-        (self.rt_perm & moto_rt::fs::PERM_WRITE == 0)
-            && (self.rt_perm & moto_rt::fs::PERM_READ != 0)
+        self.rt_perm & moto_rt::fs::PERM_WRITE == 0
     }
 
+    /// Clear or set only `PERM_WRITE`, preserving other permission bits.
     pub fn set_readonly(&mut self, readonly: bool) {
         if readonly {
-            self.rt_perm = moto_rt::fs::PERM_READ;
+            self.rt_perm &= !moto_rt::fs::PERM_WRITE;
         } else {
-            self.rt_perm = moto_rt::fs::PERM_READ | moto_rt::fs::PERM_WRITE;
+            self.rt_perm |= moto_rt::fs::PERM_WRITE;
         }
     }
 }
@@ -373,7 +374,8 @@ pub struct ReadDir {
 
 impl Drop for ReadDir {
     fn drop(&mut self) {
-        moto_rt::fs::closedir(self.rt_fd).unwrap();
+        // Never panic from Drop (especially during unwinding). Ignore close errors.
+        let _ = moto_rt::fs::closedir(self.rt_fd);
     }
 }
 
@@ -405,22 +407,25 @@ pub struct DirEntry {
 }
 
 impl DirEntry {
-    fn filename(&self) -> &str {
-        core::str::from_utf8(unsafe {
-            core::slice::from_raw_parts(self.inner.fname.as_ptr(), self.inner.fname_size as usize)
-        })
-        .unwrap()
+    fn filename_bytes(&self) -> &[u8] {
+        let size = self.inner.fname_size as usize;
+        let buf = &self.inner.fname;
+        let len = size.min(buf.len());
+        &buf[..len]
     }
 
     pub fn path(&self) -> PathBuf {
         let mut path = self.parent_path.clone();
-        path.push_str("/");
-        path.push_str(self.filename());
+        path.push('/');
+        // Parent path is UTF-8 (enforced at opendir); append entry name as lossy UTF-8
+        // only for the path component (Motor paths are strings at the RT boundary).
+        path.push_str(&String::from_utf8_lossy(self.filename_bytes()));
         path.into()
     }
 
     pub fn file_name(&self) -> OsString {
-        self.filename().to_owned().into()
+        // Do not panic on non-UTF-8; expose as OsString via lossy for Motor string APIs.
+        String::from_utf8_lossy(self.filename_bytes()).into_owned().into()
     }
 
     pub fn metadata(&self) -> io::Result<FileAttr> {
