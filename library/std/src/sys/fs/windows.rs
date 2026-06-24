@@ -746,10 +746,15 @@ impl File {
                         false,
                     )
                 }
-                _ => {
-                    return Err(io::const_error!(
-                        io::ErrorKind::Uncategorized,
-                        "Unsupported reparse point type",
+                tag => {
+                    // Only NTFS symlinks and mount points/junctions are decoded here.
+                    // Other name-surrogate tags (WSL/LX, app-exec, filter drivers) may
+                    // still report as `is_symlink()` via the 0x20000000 bit (#550).
+                    return Err(io::Error::new(
+                        io::ErrorKind::Unsupported,
+                        format!(
+                            "unsupported reparse point type for read_link (tag 0x{tag:08x})"
+                        ),
                     ));
                 }
             };
