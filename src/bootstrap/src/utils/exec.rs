@@ -909,7 +909,23 @@ impl<'a> DeferredCommand<'a> {
             };
             let action = match fail_reason {
                 FailureReason::FailedAtRuntime(e) => {
-                    format!("failed with exit code {}", e.code().unwrap_or(1))
+                    if let Some(code) = e.code() {
+                        format!("failed with exit code {code}")
+                    } else {
+                        #[cfg(unix)]
+                        {
+                            use std::os::unix::process::ExitStatusExt;
+                            if let Some(sig) = e.signal() {
+                                format!("killed by signal {sig}")
+                            } else {
+                                format!("failed (no exit code)")
+                            }
+                        }
+                        #[cfg(not(unix))]
+                        {
+                            format!("failed (no exit code)")
+                        }
+                    }
                 }
                 FailureReason::FailedToFinish(e) => {
                     format!("failed to finish: {e:?}")
