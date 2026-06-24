@@ -88,7 +88,7 @@ impl TestCx<'_> {
         // 2. Specific library paths in `self.config.compile_lib_path` needed for running rustc.
 
         let base_dylib_search_paths = Vec::from_iter(
-            env::split_paths(&env::var(dylib_env_var()).unwrap())
+            env::split_paths(&env::var(dylib_env_var()).unwrap_or_default())
                 .map(|p| Utf8PathBuf::try_from(p).expect("dylib env var contains non-UTF8 paths")),
         );
 
