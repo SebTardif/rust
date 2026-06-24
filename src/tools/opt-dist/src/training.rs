@@ -185,7 +185,7 @@ pub fn gather_bolt_profiles(
     log::info!("Running benchmarks with BOLT instrumented {name}");
 
     with_log_group("Running benchmarks", || {
-        benchmarks.run().with_context(|| "Cannot gather {name} BOLT profiles")
+        benchmarks.run().with_context(|| format!("Cannot gather {name} BOLT profiles"))
     })?;
 
     let merged_profile = env.artifact_dir().join(format!("{name}-bolt.profdata"));
