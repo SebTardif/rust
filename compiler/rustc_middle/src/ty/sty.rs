@@ -1790,7 +1790,12 @@ impl<'tcx> Ty<'tcx> {
             // metadata of `tail`.
             ty::Param(_) | ty::Alias(..) => Err(tail),
 
-            ty::UnsafeBinder(_) => todo!("FIXME(unsafe_binder)"),
+            // Metadata of an unsafe binder is the metadata of its inner type
+            // (regions erased), same as other queries on `UnsafeBinder`.
+            ty::UnsafeBinder(bound_ty) => {
+                tcx.instantiate_bound_regions_with_erased((*bound_ty).into())
+                    .ptr_metadata_ty_or_tail(tcx, normalize)
+            }
 
             ty::Infer(ty::TyVar(_))
             | ty::Pat(..)
