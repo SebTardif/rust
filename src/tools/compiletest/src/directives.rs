@@ -356,7 +356,8 @@ impl TestProps {
     /// `Some("foo")`.
     fn load_from(&mut self, testfile: &Utf8Path, test_revision: Option<&str>, config: &Config) {
         if !testfile.is_dir() {
-            let file_contents = fs::read_to_string(testfile).unwrap();
+            let file_contents = fs::read_to_string(testfile)
+                .unwrap_or_else(|e| panic!("failed to read test file {testfile}: {e}"));
             let file_directives = FileDirectives::from_file_contents(testfile, &file_contents);
 
             iter_directives(
