@@ -61,17 +61,13 @@ pub(crate) fn codegen_inline_asm_terminator<'tcx>(
             template[1]
         && template[2] == InlineAsmTemplatePiece::String(")".into())
     {
-        // FIXME no inline asm support for s390x yet, but stdarch needs it for feature detection
-        match destination {
-            Some(destination) => {
-                let destination_block = fx.get_block(destination);
-                fx.bcx.ins().jump(destination_block, &[]);
-            }
-            None => {
-                fx.bcx.ins().trap(TrapCode::user(1 /* unreachable */).unwrap());
-            }
-        }
-        return;
+        // s390x stfle stores the facility list; without a real store, feature detection
+        // reads garbage/zero and reports no facilities. Fail loudly rather than lie.
+        fx.tcx.dcx().span_fatal(
+            span,
+            "cranelift does not support s390x `stfle` inline asm (needed for runtime feature detection); \
+             use the LLVM backend for s390x targets that rely on `is_*_feature_detected`",
+        );
     }
 
     let operands = operands
@@ -758,9 +754,37 @@ impl<'tcx> InlineAssemblyGenerator<'_, 'tcx> {
                 writeln!(generated_asm, ", [x19, 0x{:x}]", offset.bytes()).unwrap();
             }
             InlineAsmArch::RiscV64 => {
-                generated_asm.push_str("    sd ");
-                reg.emit(generated_asm, InlineAsmArch::RiscV64, None).unwrap();
-                writeln!(generated_asm, ", 0x{:x}(s1)", offset.bytes()).unwrap();
+                match reg {
+                    InlineAsmReg::RiscV(r)
+                        if matches!(
+                            r.reg_class(),
+                            RiscVInlineAsmRegClass::freg
+                        ) =>
+                    {
+                        // Double-precision FP spill (f0-f31 are 64-bit on RV64F/D).
+                        generated_asm.push_str("    fsd ");
+                        reg.emit(generated_asm, InlineAsmArch::RiscV64, None).unwrap();
+                        writeln!(generated_asm, ", 0x{:x}(s1)", offset.bytes()).unwrap();
+                    }
+                    InlineAsmReg::RiscV(r)
+                        if matches!(
+                            r.reg_class(),
+                            RiscVInlineAsmRegClass::vreg
+                        ) =>
+                    {
+                        // Vector unit-stride store; caller must have configured vtype/vl.
+                        generated_asm.push_str("    vs1r.v ");
+                        reg.emit(generated_asm, InlineAsmArch::RiscV64, None).unwrap();
+                        writeln!(generated_asm, ", (s1)").unwrap();
+                        // Offset is ignored for vs1r.v; multi-vreg spills need separate slots.
+                        let _ = offset;
+                    }
+                    _ => {
+                        generated_asm.push_str("    sd ");
+                        reg.emit(generated_asm, InlineAsmArch::RiscV64, None).unwrap();
+                        writeln!(generated_asm, ", 0x{:x}(s1)", offset.bytes()).unwrap();
+                    }
+                }
             }
             _ => unimplemented!("save_register for {:?}", arch),
         }
@@ -807,9 +831,34 @@ impl<'tcx> InlineAssemblyGenerator<'_, 'tcx> {
                 writeln!(generated_asm, ", [x19, 0x{:x}]", offset.bytes()).unwrap();
             }
             InlineAsmArch::RiscV64 => {
-                generated_asm.push_str("    ld ");
-                reg.emit(generated_asm, InlineAsmArch::RiscV64, None).unwrap();
-                writeln!(generated_asm, ", 0x{:x}(s1)", offset.bytes()).unwrap();
+                match reg {
+                    InlineAsmReg::RiscV(r)
+                        if matches!(
+                            r.reg_class(),
+                            RiscVInlineAsmRegClass::freg
+                        ) =>
+                    {
+                        generated_asm.push_str("    fld ");
+                        reg.emit(generated_asm, InlineAsmArch::RiscV64, None).unwrap();
+                        writeln!(generated_asm, ", 0x{:x}(s1)", offset.bytes()).unwrap();
+                    }
+                    InlineAsmReg::RiscV(r)
+                        if matches!(
+                            r.reg_class(),
+                            RiscVInlineAsmRegClass::vreg
+                        ) =>
+                    {
+                        generated_asm.push_str("    vl1r.v ");
+                        reg.emit(generated_asm, InlineAsmArch::RiscV64, None).unwrap();
+                        writeln!(generated_asm, ", (s1)").unwrap();
+                        let _ = offset;
+                    }
+                    _ => {
+                        generated_asm.push_str("    ld ");
+                        reg.emit(generated_asm, InlineAsmArch::RiscV64, None).unwrap();
+                        writeln!(generated_asm, ", 0x{:x}(s1)", offset.bytes()).unwrap();
+                    }
+                }
             }
             _ => unimplemented!("restore_register for {:?}", arch),
         }
