@@ -559,7 +559,12 @@ pub fn std_cargo(
         cmd.arg("--print=deployment-target");
         let output = cmd.run_capture_stdout(builder).stdout();
 
-        let (env_var, value) = output.split_once('=').unwrap();
+        let (env_var, value) = output.split_once('=').unwrap_or_else(|| {
+            panic!(
+                "unexpected output from `rustc --print=deployment-target`, \
+                 expected `VAR=value` but got: {output:?}"
+            )
+        });
         // Unconditionally set the env var (if it was set in the environment
         // already, rustc should've picked that up).
         cargo.env(env_var.trim(), value.trim());
