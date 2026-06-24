@@ -87,7 +87,7 @@ impl Tcp {
             Self::V4(client) => {
                 let temp = client.get_mode_data()?;
                 match NonNull::new(temp.control_option) {
-                    Some(x) => unsafe { Ok(x.as_ref().enable_nagle.into()) },
+                    Some(x) => unsafe { Ok(!bool::from(x.as_ref().enable_nagle)) },
                     None => unsupported(),
                 }
             }
