@@ -764,7 +764,9 @@ where
     fn drop(&mut self) {
         unsafe {
             let ptr = (*self.0.as_ptr()).0.get();
-            super::free(ptr as _, size_of_val(&mut *ptr), T::align_of());
+            // Use the same alignment as `new_uninit_bytes` to avoid UB.
+            let alignment = cmp::max(T::align_of(), 8);
+            super::free(ptr as _, size_of_val(&mut *ptr), alignment);
         }
     }
 }
