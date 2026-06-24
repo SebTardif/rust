@@ -2818,7 +2818,7 @@ impl<'test> TestCx<'test> {
         writeln!(self.stderr, "diff of {stream}:\n");
         if let Some(diff_command) = self.config.diff_command.as_deref() {
             let mut args = diff_command.split_whitespace();
-            let name = args.next().unwrap();
+            let name = args.next().expect("diff_command must not be empty");
             match Command::new(name).args(args).args([expected_path, actual_path]).output() {
                 Err(err) => {
                     self.fatal(&format!(
