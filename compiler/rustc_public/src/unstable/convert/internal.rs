@@ -738,6 +738,9 @@ impl RustcInternal for ProjectionElem {
             ProjectionElem::OpaqueCast(ty) => {
                 rustc_middle::mir::PlaceElem::OpaqueCast(ty.internal(tables, tcx))
             }
+            ProjectionElem::UnwrapUnsafeBinder(ty) => {
+                rustc_middle::mir::PlaceElem::UnwrapUnsafeBinder(ty.internal(tables, tcx))
+            }
         }
     }
 }

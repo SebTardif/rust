@@ -285,6 +285,10 @@ macro_rules! make_mir_visitor {
                     Rvalue::UnaryOp(_, op) | Rvalue::Use(op, _) => {
                         self.visit_operand(op, location);
                     }
+                    Rvalue::WrapUnsafeBinder(op, ty) => {
+                        self.visit_operand(op, location);
+                        self.visit_ty(ty, location);
+                    }
                 }
             }
 
@@ -468,6 +472,7 @@ macro_rules! visit_place_fns {
                 ProjectionElem::Subslice { from: _, to: _, from_end: _ } => {}
                 ProjectionElem::Downcast(_idx) => {}
                 ProjectionElem::OpaqueCast(ty) => self.visit_ty(ty, location),
+                ProjectionElem::UnwrapUnsafeBinder(ty) => self.visit_ty(ty, location),
             }
         }
     };
@@ -508,6 +513,7 @@ macro_rules! visit_place_fns {
                 ProjectionElem::Subslice { from: _, to: _, from_end: _ } => {}
                 ProjectionElem::Downcast(_idx) => {}
                 ProjectionElem::OpaqueCast(ty) => self.visit_ty(ty, location),
+                ProjectionElem::UnwrapUnsafeBinder(ty) => self.visit_ty(ty, location),
             }
         }
     };
