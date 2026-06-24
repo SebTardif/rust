@@ -81,10 +81,22 @@ impl SystemTime {
     }
 
     pub fn checked_add_duration(&self, other: &Duration) -> Option<SystemTime> {
-        Some(SystemTime(self.0.checked_add_unsigned(other.as_secs())?))
+        // Round up sub-second components to avoid silently dropping them
+        let secs = if other.subsec_nanos() > 0 {
+            other.as_secs().checked_add(1)?
+        } else {
+            other.as_secs()
+        };
+        Some(SystemTime(self.0.checked_add_unsigned(secs)?))
     }
 
     pub fn checked_sub_duration(&self, other: &Duration) -> Option<SystemTime> {
-        Some(SystemTime(self.0.checked_sub_unsigned(other.as_secs())?))
+        // Round up sub-second components to avoid silently dropping them
+        let secs = if other.subsec_nanos() > 0 {
+            other.as_secs().checked_add(1)?
+        } else {
+            other.as_secs()
+        };
+        Some(SystemTime(self.0.checked_sub_unsigned(secs)?))
     }
 }
