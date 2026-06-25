@@ -196,7 +196,7 @@ mod instant_internal {
     fn timestamp_rdtsc() -> Option<Duration> {
         static FREQUENCY: crate::sync::OnceLock<u64> = crate::sync::OnceLock::new();
 
-        // Get Frequency in Mhz
+        // Get Frequency in Hz
         // Inspired by [`edk2/UefiCpuPkg/Library/CpuTimerLib/CpuTimerLib.c`](https://github.com/tianocore/edk2/blob/master/UefiCpuPkg/Library/CpuTimerLib/CpuTimerLib.c)
         let freq = FREQUENCY
             .get_or_try_init(|| {
@@ -209,7 +209,7 @@ mod instant_internal {
             .ok()?;
 
         let ts = unsafe { crate::arch::x86_64::_rdtsc() };
-        let ns = mul_div_u64(ts, 1000, *freq);
+        let ns = mul_div_u64(ts, NS_PER_SEC, *freq);
         Some(Duration::from_nanos(ns))
     }
 
@@ -228,7 +228,7 @@ mod instant_internal {
             .ok()?;
 
         let ts = unsafe { crate::arch::x86::_rdtsc() };
-        let ns = mul_div_u64(ts, 1000, *freq);
+        let ns = mul_div_u64(ts, NS_PER_SEC, *freq);
         Some(Duration::from_nanos(ns))
     }
 }
