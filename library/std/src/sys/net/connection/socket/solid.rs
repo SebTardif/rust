@@ -171,6 +171,11 @@ impl Socket {
         match n {
             0 => Err(io::const_error!(io::ErrorKind::TimedOut, "connection timed out")),
             _ => {
+                if errorfds.num_fds != 0 {
+                    if let Some(e) = self.take_error()? {
+                        return Err(e);
+                    }
+                }
                 let can_write = writefds.num_fds != 0;
                 if !can_write {
                     if let Some(e) = self.take_error()? {
