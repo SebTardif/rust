@@ -57,6 +57,8 @@ fn resolve_instance_raw<'tcx>(
                     | ty::Dynamic(..)
                     | ty::Array(..)
                     | ty::Slice(..)
+                    // Pat peels in needs_drop_components; allow nontrivial glue for consistency.
+                    | ty::Pat(..)
                     | ty::UnsafeBinder(..) => ty::InstanceKind::DropGlue(def_id, Some(ty)),
                     // Drop shims can only be built from ADTs.
                     _ => return Ok(None),
@@ -77,7 +79,10 @@ fn resolve_instance_raw<'tcx>(
                     | ty::Adt(..)
                     | ty::Dynamic(..)
                     | ty::Array(..)
-                    | ty::Slice(..) => {}
+                    | ty::Slice(..)
+                    // Mirror DropGlue: binders and pattern types are compound like Array/Slice.
+                    | ty::Pat(..)
+                    | ty::UnsafeBinder(..) => {}
                     // Async destructor ctor shims can only be built from ADTs.
                     _ => return Ok(None),
                 }
